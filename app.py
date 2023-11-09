@@ -286,6 +286,8 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
         selectors = len([sb_template[key]
                         for key in ('has_background_image', 'has_background_shape', 'has_logo', 'has_background_color', 'has_accent_color')
                         if sb_template[key]])
+        if any(field_meta['text_color_type'] != 'DONT_CHANGE' for field_meta in new_meta):
+            selectors += 1
         cols = st.columns(selectors) if selectors > 0 else []
 
         col = 0
@@ -328,7 +330,12 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
             with cols[col]:
                 background_color = st.color_picker('Background Color', value='#FF5733', key=f'background_color-{template_name}')
             col += 1
-        
+
+        if any(field_meta['text_color_type'] != 'DONT_CHANGE' for field_meta in new_meta):
+            with cols[col]:
+                text_color = st.color_picker('Text Color', value='#FF5733', key=f'text_color-{template_name}')
+            col += 1
+
         text_fields = {key: st.text_area(key, value=text_fields[key], key=f'{key}-{template_name}')
                         for key, meta in new_meta.items()}
 
@@ -340,19 +347,19 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
             ExpressionAttributeValues={':components': sb_template_to_db_components(sb_template, new_meta)},
         )
         st.toast("Requesting new image...")
-        fill_canvas(template_name, background_color, accent_color, background_url, logo_url, text_fields)
+        fill_canvas(template_name, background_color, accent_color, text_color, background_url, logo_url, text_fields)
 
     if st.button("Demo", key=f'demo-{template_name}'):
         st.toast("Requesting new image...")
-        fill_canvas(template_name, background_color, accent_color, background_url, logo_url, text_fields)
+        fill_canvas(template_name, background_color, accent_color, text_color, background_url, logo_url, text_fields)
 
 
-def fill_canvas(template_name, background_color, accent_color, background_url, logo_url, text_fields):
+def fill_canvas(template_name, background_color, accent_color, text_color, background_url, logo_url, text_fields):
     payload = {
         'template_name': template_name,
         'background_color': background_color,
         'accent_color': accent_color,
-        'text_color': None,
+        'text_color': text_color,
         'background_image_url': background_url,
         'logo_url': logo_url,
         'text_fields': text_fields,
@@ -361,7 +368,10 @@ def fill_canvas(template_name, background_color, accent_color, background_url, l
     response = requests.post(dev_url + '/v1/posts/fill-canvas',
                              json=payload,
                              headers={'Authorization': f'Bearer {dev_token}'}).json()
-    st.image(response['image_url'], width=300)
+    if 'image_url' in response:
+        st.image(response['image_url'], width=300)
+    else:
+        st.error(str(response))
 
 
 def refresh():
