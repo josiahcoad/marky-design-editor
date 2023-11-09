@@ -248,7 +248,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
         with cols[2]:
             all_caps = st.checkbox('ALL CAPS', value=old_field_meta.get('all_caps', False), key=f'{key}_all_caps-{template_name}')
         with cols[3]:
-            options = ('NORMAL', 'ON_ACCENT', 'ACCENT')
+            options = ('DONT_CHANGE', 'ON_BACKGROUND', 'ON_ACCENT', 'ACCENT')
             try:
                 index = options.index(old_field_meta.get('text_color_type'))
             except ValueError:
