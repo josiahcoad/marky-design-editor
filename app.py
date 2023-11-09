@@ -242,8 +242,6 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
             char_count = st.number_input('max characters',
                                          value=int(old_field_meta.get('max_characters', 100)),
                                          key=f'{key}_char_count-{template_name}',
-                                         min_value=10,
-                                         max_value=400,
                                          step=10)
         with cols[2]:
             all_caps = st.checkbox('ALL CAPS', value=old_field_meta.get('all_caps', False), key=f'{key}_all_caps-{template_name}')
