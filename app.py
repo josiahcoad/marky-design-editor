@@ -290,14 +290,14 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
     # set defaults
     background_url = default_background_url =  "https://images.unsplash.com/photo-1695331453337-d5f95078f78e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwxfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85"
     logo_url = default_logo_url = 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg'
-    background_color = default_background_color = "#FF5733"
+    background_color = default_background_color = "#D5E2C4"
     accent_color = default_accent_color = "#FF5733"
-    text_color = default_text_color = "#FF5733"
+    text_color = default_text_color = "#E633FF"
     text_values = default_text_values = {key: get_filler_text(key, meta) for key, meta in new_meta.items()}
     values_changed = False
 
     # Configuration for values
-    if st.checkbox('Adjust Values', key=f'adjust-values-{template_name}'):
+    if st.checkbox('Adjust Fill Values', key=f'adjust-values-{template_name}'):
 
         selectors = len([sb_template[key]
                         for key in ('has_background_image', 'has_background_shape', 'has_logo', 'has_background_color', 'has_accent_color')
