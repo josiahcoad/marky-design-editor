@@ -214,6 +214,8 @@ def sb_template_to_db_components(sb_template: dict, text_meta: dict):
 
 
 def get_filler_text(key, meta):
+    if meta['optional']:
+        return ''
     if key == 'title':
         s = "I wish I knew this when I started! It would have saved me a lot of time and money."
         return s[:meta['max_characters']] if len(s) > meta['max_characters'] else s + ipsem[:meta['max_characters'] - len(s)]
