@@ -31,13 +31,6 @@ os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 
 st.set_page_config(layout='wide')
 
-sb_token_st_key = 'sb_token'
-if not (st.session_state.get(sb_token_st_key)):
-    st.session_state[sb_token_st_key] = st.text_input('switchboard token')
-    if st.button("Submit"):
-        st.rerun()
-    st.stop()
-
 
 cookies = {
     '_ga': 'GA1.1.519206553.1682785335',
@@ -59,11 +52,12 @@ ipsem = "This Python package runs a Markov chain algorithm over the surviving wo
 
 
 
+sb_token_st_key = 'sb_token'
 headers = {
     'authority': 'www.switchboard.ai',
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'en-US,en;q=0.9',
-    'authorization': f"Bearer {st.session_state[sb_token_st_key]}",
+    'authorization': f"Bearer {st.session_state.get(sb_token_st_key)}",
 }
 
 
