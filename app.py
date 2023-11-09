@@ -333,11 +333,11 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
             UpdateExpression='SET components = :components',
             ExpressionAttributeValues={':components': sb_template_to_db_components(sb_template, new_meta)},
         )
-        st.text("Loading...")
+        st.toast("Requesting new image...")
         fill_canvas(template_name, background_color, accent_color, background_url, logo_url, text_fields)
 
     if st.button("Demo", key=f'demo-{template_name}'):
-        st.text("Loading...")
+        st.toast("Requesting new image...")
         fill_canvas(template_name, background_color, accent_color, background_url, logo_url, text_fields)
 
 
@@ -500,6 +500,15 @@ with st.sidebar:
     if st.button('Pull Data'):
         refresh()
 
+    if st.button('Push to Prod'):
+        prod_themes_table = boto3.resource('dynamodb').Table('themes-prod')
+        prod_canvas_table = boto3.resource('dynamodb').Table('switchboard-prod')
+        for name, theme in get_themes().items():
+            prod_themes_table.put_item(Item=theme)
+        st.toast("Pushed themes to prod")
+        for name, template in get_db_templates().items():
+            prod_canvas_table.put_item(Item=template)
+        st.toast("Pushed templates to prod")
 
 # if (~df.matches).any():
 #     st.error('Mismatched Templates! Please Fix by deleting from DB or updating in SB then syncing to db.')
