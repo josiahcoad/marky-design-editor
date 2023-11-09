@@ -407,14 +407,13 @@ def display_notes(template_name, notes):
                     UpdateExpression='SET notes = :notes',
                     ExpressionAttributeValues={':notes': st.session_state[notes_key]},
                 )
-                st.success(f'Updated notes for {template_name}')
+                st.success(f'Updated notes for {template_name}', icon='🤖')
                 # Optionally reset edit mode after saving
                 st.session_state[edit_key] = False
-                refresh()
         else:
             # Display notes if not in edit mode
             if notes:
-                st.text(f'Notes: {notes}')
+                st.text(f'Notes: {st.session_state.get(notes_key, notes)}')
 
 
 def change_approval_status(template_name, approval_status):
