@@ -21,7 +21,7 @@ if not (st.session_state.get(aws_key_st_key) and st.session_state.get(aws_key_id
 
 os.environ['AWS_ACCESS_KEY_ID'] = st.session_state['aws_key_id']
 os.environ['AWS_SECRET_ACCESS_KEY'] = st.session_state['aws_key']
-
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 
 cookies = {
     '_ga': 'GA1.1.519206553.1682785335',
