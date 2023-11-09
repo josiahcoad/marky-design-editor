@@ -235,7 +235,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
     old_meta_subset = {}
     for key in sb_template['text_keys']:
         old_field_meta = old_meta.get(key, {}) if db_template else {}
-        cols = st.columns(4)
+        cols = st.columns(5)
         with cols[0]:
             st.text(key)
         with cols[1]:
@@ -255,16 +255,20 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
                                            options,
                                            index=index,
                                            key=f'{key}_text_color_type-{template_name}')
+        with cols[4]:
+            optional = st.checkbox('optional', value=old_field_meta.get('optional', False), key=f'{key}_optional-{template_name}')
     
         new_meta[key] = {
             'max_characters': char_count,
             'all_caps': all_caps,
             'color_type': text_color_type,
+            'optional': optional,
         }
         old_meta_subset[key] = {
             'max_characters': old_field_meta.get('max_characters'),
             'all_caps': old_field_meta.get('all_caps'),
             'color_type': old_field_meta.get('text_color_type'),
+            'optional': old_field_meta.get('optional'),
         }
 
 
