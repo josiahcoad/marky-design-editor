@@ -274,10 +274,12 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
         }
 
 
-    background_color = "#FF5733"
+    # set defaults
     background_url =  "https://images.unsplash.com/photo-1695331453337-d5f95078f78e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwxfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85"
     logo_url = 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg'
+    background_color = "#FF5733"
     accent_color = "#FF5733"
+    text_color = "#FF5733"
 
     text_fields = {key: get_filler_text(key, meta) for key, meta in new_meta.items()}
     # Configuration for values
@@ -323,17 +325,17 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
 
         if sb_template['has_accent_color']:
             with cols[col]:
-                accent_color = st.color_picker('Accent Color', value='#FF5733', key=f'accent_color-{template_name}')
+                accent_color = st.color_picker('Accent Color', value=accent_color, key=f'accent_color-{template_name}')
             col += 1
 
         if sb_template['has_background_color']:
             with cols[col]:
-                background_color = st.color_picker('Background Color', value='#FF5733', key=f'background_color-{template_name}')
+                background_color = st.color_picker('Background Color', value=background_color, key=f'background_color-{template_name}')
             col += 1
 
         if any(field_meta['text_color_type'] != 'DONT_CHANGE' for field_meta in new_meta):
             with cols[col]:
-                text_color = st.color_picker('Text Color', value='#FF5733', key=f'text_color-{template_name}')
+                text_color = st.color_picker('Text Color', value=text_color, key=f'text_color-{template_name}')
             col += 1
 
         text_fields = {key: st.text_area(key, value=text_fields[key], key=f'{key}-{template_name}')
