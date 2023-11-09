@@ -195,9 +195,7 @@ def sb_template_to_db_components(sb_template: dict, text_meta: dict):
         return {
             'type': 'TEXT',
             'key': name,
-            'max_characters': meta['max_characters'],
-            'all_caps': meta['all_caps'],
-            'text_color_type': meta['color_type'],
+            **meta,
         }
 
     def background_image_component():
@@ -362,17 +360,13 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
         text_fields = {key: st.text_area(key, value=text_fields[key], key=f'{key}-{template_name}')
                         for key, meta in new_meta.items()}
 
-    if old_meta_subset != new_meta:
+    if st.button("Update DB & Demo", key=f'demo-{template_name}') or (old_meta_subset != new_meta):
         print(f"now updating components from {old_meta_subset} to {new_meta} -- diff {get_json_diff(old_meta_subset, new_meta)}!")
         canvas_table.update_item(
             Key={'name': template_name},
             UpdateExpression='SET components = :components',
             ExpressionAttributeValues={':components': sb_template_to_db_components(sb_template, new_meta)},
         )
-        st.toast("Requesting new image...")
-        fill_canvas(template_name, background_color, accent_color, text_color, background_url, logo_url, text_fields)
-
-    if st.button("Demo", key=f'demo-{template_name}'):
         st.toast("Requesting new image...")
         fill_canvas(template_name, background_color, accent_color, text_color, background_url, logo_url, text_fields)
 
