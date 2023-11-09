@@ -6,22 +6,17 @@ import streamlit as st
 import boto3
 import requests
 
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
+
 st.set_page_config(layout='wide')
 
-aws_key_id_st_key = 'aws_key_id'
-aws_key_st_key = 'aws_key'
 sb_token_st_key = 'sb_token'
-if not (st.session_state.get(aws_key_st_key) and st.session_state.get(aws_key_id_st_key) and st.session_state.get(sb_token_st_key)):
-    st.session_state[aws_key_id_st_key] = st.text_input('aws key id (short)')
-    st.session_state[aws_key_st_key] = st.text_input('aws key (long)')
+if not (st.session_state.get(sb_token_st_key)):
     st.session_state[sb_token_st_key] = st.text_input('switchboard token')
     if st.button("Submit"):
         st.rerun()
     st.stop()
 
-os.environ['AWS_ACCESS_KEY_ID'] = st.session_state['aws_key_id']
-os.environ['AWS_SECRET_ACCESS_KEY'] = st.session_state['aws_key']
-os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 
 cookies = {
     '_ga': 'GA1.1.519206553.1682785335',
