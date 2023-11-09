@@ -276,13 +276,13 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
         new_meta[key] = {
             'max_characters': char_count,
             'all_caps': all_caps,
-            'color_type': text_color_type,
+            'text_color_type': text_color_type,
             'optional': optional,
         }
         old_meta_subset[key] = {
             'max_characters': old_field_meta.get('max_characters'),
             'all_caps': old_field_meta.get('all_caps', False),
-            'color_type': old_field_meta.get('text_color_type', 'DONT_CHANGE'),
+            'text_color_type': old_field_meta.get('text_color_type', 'DONT_CHANGE'),
             'optional': old_field_meta.get('optional', False),
         }
 
@@ -291,8 +291,8 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
     background_url = default_background_url =  "https://images.unsplash.com/photo-1695331453337-d5f95078f78e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwxfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85"
     logo_url = default_logo_url = 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg'
     background_color = default_background_color = "#D5E2C4"
-    accent_color = default_accent_color = "#FF5733"
-    text_color = default_text_color = "#E633FF"
+    accent_color = default_accent_color = "#FF5733" # orange
+    text_color = default_text_color = "#E633FF" # magenta
     text_values = default_text_values = {key: get_filler_text(key, meta) for key, meta in new_meta.items()}
     values_changed = False
 
@@ -302,7 +302,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
         selectors = len([sb_template[key]
                         for key in ('has_background_image', 'has_background_shape', 'has_logo', 'has_background_color', 'has_accent_color')
                         if sb_template[key]])
-        if any(field_meta['color_type'] not in ('ACCENT', 'DONT_CHANGE') for field_meta in new_meta.values()):
+        if any(field_meta['text_color_type'] not in ('ACCENT', 'DONT_CHANGE') for field_meta in new_meta.values()):
             selectors += 1
         cols = st.columns(selectors) if selectors > 0 else []
 
@@ -347,7 +347,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
                 background_color = st.color_picker('Background Color', value=default_background_color, key=f'background_color-{template_name}')
             col += 1
 
-        if any(field_meta['color_type'] not in ('ACCENT', 'DONT_CHANGE') for field_meta in new_meta.values()):
+        if any(field_meta['text_color_type'] not in ('ACCENT', 'DONT_CHANGE') for field_meta in new_meta.values()):
             with cols[col]:
                 text_color = st.color_picker('Text Color', value=default_text_color, key=f'text_color-{template_name}')
             col += 1
