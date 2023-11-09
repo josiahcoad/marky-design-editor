@@ -573,7 +573,7 @@ for row in df.head(load).itertuples():
         st.markdown(f'- accent: {"✅" if row.has_accent_color else "❌"}')
     with cols[4]:
         st.markdown(f'- bg-photo: {"✅" if row.has_background_image else "❌"}')
-        st.markdown(f'- bg-shape: {"✅" if row.has_background_shape else "❌"}')
+        st.markdown(f'- no-bg-shape: {"❌" if row.has_background_shape else "✅"}')
         st.markdown(f'- logo: {"✅" if row.has_logo else "❌"}')
     with cols[5]:
         st.markdown(f'- in-db: {"✅" if row.in_db else "❌"}')
