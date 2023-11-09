@@ -483,6 +483,9 @@ with st.sidebar:
     with st.expander('Filters'):
         theme_names = [None] + list(df.theme.unique())
         color_editable = {name: get_themes().get(name, {}).get('color_editable', False) for name in theme_names}
+        template_name = st.text_input('Template Name')
+        if template_name:
+            df = df[df.name.str.contains(template_name, case=False)]
         theme = st.selectbox('Theme',
                             options=[None] + list(df.theme.unique()),
                             index=0,
