@@ -266,9 +266,9 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
         }
         old_meta_subset[key] = {
             'max_characters': old_field_meta.get('max_characters'),
-            'all_caps': old_field_meta.get('all_caps'),
-            'color_type': old_field_meta.get('text_color_type'),
-            'optional': old_field_meta.get('optional'),
+            'all_caps': old_field_meta.get('all_caps', False),
+            'color_type': old_field_meta.get('text_color_type', 'NORMAL'),
+            'optional': old_field_meta.get('optional', False),
         }
 
 
