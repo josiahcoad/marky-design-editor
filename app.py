@@ -243,7 +243,7 @@ def get_filler_text(key, meta):
 
 # Function to display row details and handle the demo button functionality
 def display_template_components(template_name: str, sb_template: dict, db_template: dict | None):
-    st.subheader('Text Fields')
+    st.subheader('Text Containers')
     new_meta = {}
     old_meta = db_template['text_meta'] if db_template else {}
     old_meta = {k: {**v, 'max_characters': int(v['max_characters'])} for k, v in old_meta.items()} if old_meta else {}
