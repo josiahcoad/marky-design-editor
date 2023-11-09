@@ -124,7 +124,7 @@ def db_template(components):
         'has_background_shape': has_shape_named('object1'),
         'has_logo': has_image_named('logo'),
         'has_logo_bg': has_image_named('logo-bg'),
-        'has_background_color': has_image_named('background-colored-layer'),
+        'has_background_color': has_image_named('colored-layer-background'),
         'has_accent_color': has_image_named('colored-layer'),
         'text_meta': {x['key']: x for x in components if x['type'] == 'TEXT'},
     }
@@ -144,7 +144,7 @@ def switchboard_template(components):
         'has_background_shape': has_shape_named('object1'),
         'has_logo': has_image_named('logo'),
         'has_logo_bg': has_image_named('logo-bg'),
-        'has_background_color': has_image_named('background-colored-layer'),
+        'has_background_color': has_image_named('colored-layer-background'),
         'has_accent_color': has_image_named('colored-layer'),
         'text_keys': sorted([x['name'] for x in components if x['type'] == 'text']),
     }
@@ -213,7 +213,7 @@ def sb_template_to_db_components(sb_template: dict, text_meta: dict):
         return image_component('logo-bg')
     
     def background_color_component():
-        return image_component('background-colored-layer')
+        return image_component('colored-layer-background')
 
     def accent_color_component():
         return image_component('colored-layer')
