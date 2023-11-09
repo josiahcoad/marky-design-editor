@@ -294,13 +294,14 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
 
 
     # set defaults
-    background_url =  "https://images.unsplash.com/photo-1695331453337-d5f95078f78e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwxfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85"
-    logo_url = 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg'
-    background_color = "#FF5733"
-    accent_color = "#FF5733"
-    text_color = "#FF5733"
+    background_url = default_background_url =  "https://images.unsplash.com/photo-1695331453337-d5f95078f78e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwxfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85"
+    logo_url = default_logo_url = 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg'
+    background_color = default_background_color = "#FF5733"
+    accent_color = default_accent_color = "#FF5733"
+    text_color = default_text_color = "#FF5733"
+    text_values = default_text_values = {key: get_filler_text(key, meta) for key, meta in new_meta.items()}
+    values_changed = False
 
-    text_fields = {key: get_filler_text(key, meta) for key, meta in new_meta.items()}
     # Configuration for values
     if st.checkbox('Adjust Values', key=f'adjust-values-{template_name}'):
 
@@ -344,23 +345,30 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
 
         if sb_template['has_accent_color']:
             with cols[col]:
-                accent_color = st.color_picker('Accent Color', value=accent_color, key=f'accent_color-{template_name}')
+                accent_color = st.color_picker('Accent Color', value=default_accent_color, key=f'accent_color-{template_name}')
             col += 1
 
         if sb_template['has_background_color']:
             with cols[col]:
-                background_color = st.color_picker('Background Color', value=background_color, key=f'background_color-{template_name}')
+                background_color = st.color_picker('Background Color', value=default_background_color, key=f'background_color-{template_name}')
             col += 1
 
         if any(field_meta['color_type'] not in ('ACCENT', 'DONT_CHANGE') for field_meta in new_meta.values()):
             with cols[col]:
-                text_color = st.color_picker('Text Color', value=text_color, key=f'text_color-{template_name}')
+                text_color = st.color_picker('Text Color', value=default_text_color, key=f'text_color-{template_name}')
             col += 1
 
-        text_fields = {key: st.text_area(key, value=text_fields[key], key=f'{key}-{template_name}')
-                        for key, meta in new_meta.items()}
+        text_values = {key: st.text_area(key, value=value, key=f'{key}-{template_name}')
+                        for key, value in default_text_values.items()}
+        
+        values_changed = (background_url != default_background_url
+                          or logo_url != default_logo_url
+                          or background_color != default_background_color
+                          or accent_color != default_accent_color
+                          or text_color != default_text_color
+                          or any(text_values[key] != get_filler_text(key, meta) for key, meta in new_meta.items()))
 
-    if st.button("Update DB & Demo", key=f'demo-{template_name}') or (old_meta_subset != new_meta):
+    if st.button("Update DB & Demo", key=f'demo-{template_name}') or (old_meta_subset != new_meta) or values_changed:
         print(f"now updating components from {old_meta_subset} to {new_meta} -- diff {get_json_diff(old_meta_subset, new_meta)}!")
         canvas_table.update_item(
             Key={'name': template_name},
@@ -368,7 +376,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
             ExpressionAttributeValues={':components': sb_template_to_db_components(sb_template, new_meta)},
         )
         st.toast("Requesting new image...")
-        fill_canvas(template_name, background_color, accent_color, text_color, background_url, logo_url, text_fields)
+        fill_canvas(template_name, background_color, accent_color, text_color, background_url, logo_url, text_values)
 
 
 def fill_canvas(template_name, background_color, accent_color, text_color, background_url, logo_url, text_fields):
