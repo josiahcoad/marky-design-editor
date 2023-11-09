@@ -288,7 +288,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
         selectors = len([sb_template[key]
                         for key in ('has_background_image', 'has_background_shape', 'has_logo', 'has_background_color', 'has_accent_color')
                         if sb_template[key]])
-        if any(field_meta['text_color_type'] != 'DONT_CHANGE' for field_meta in new_meta):
+        if any(field_meta['text_color_type'] != 'DONT_CHANGE' for field_meta in new_meta.values()):
             selectors += 1
         cols = st.columns(selectors) if selectors > 0 else []
 
@@ -333,7 +333,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
                 background_color = st.color_picker('Background Color', value=background_color, key=f'background_color-{template_name}')
             col += 1
 
-        if any(field_meta['text_color_type'] != 'DONT_CHANGE' for field_meta in new_meta):
+        if any(field_meta['text_color_type'] != 'DONT_CHANGE' for field_meta in new_meta.values()):
             with cols[col]:
                 text_color = st.color_picker('Text Color', value=text_color, key=f'text_color-{template_name}')
             col += 1
