@@ -78,9 +78,11 @@ def get_sb_templates():
         st.stop()
 
     templates = response.json()
+
+    my_thumbnails = list_s3_objects()
     return {
         'components': {x['apiName']: switchboard_template(x['configuration']) for x in templates if x['configuration']},
-        'thumbnails': {x['apiName']: x['thumbnailUrl'] for x in templates},
+        'thumbnails': {x['apiName']: my_thumbnails.get(x['apiName']) or x['thumbnailUrl']  for x in templates},
     }
 
 
@@ -217,9 +219,11 @@ def sb_template_to_db_components(sb_template: dict, text_meta: dict):
     return components
 
 
-def upload_image_to_s3(image_url, object_name=None, bucket_name='marky-image-posts'):
+def upload_image_to_s3(image_url, object_name=None, bucket_name='marky-image-posts', prefix='thumbnails'):
     if not object_name:
-        object_name = image_url.split('/')[-1]
+        object_name = image_url.split('/')[-1].split('.')[0] + '.png'
+
+    object_name = f'{prefix}/{object_name}'
 
     # Download the image from the URL
     s3_client = boto3.client('s3')
@@ -239,6 +243,12 @@ def upload_image_to_s3(image_url, object_name=None, bucket_name='marky-image-pos
     s3_client.upload_fileobj(buffer, bucket_name, object_name)
 
     return f"https://{bucket_name}.s3.amazonaws.com/{object_name}"
+
+
+def list_s3_objects(bucket_name='marky-image-posts', prefix='thumnails'):
+    s3_client = boto3.client('s3')
+    response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
+    return [x['Key'] for x in response['Contents']]
 
 
 def get_filler_text(key, meta):
@@ -439,7 +449,6 @@ def display_notes(template_name, notes_from_db):
                     ExpressionAttributeValues={':notes': edited_notes},
                 )
                 # Update the session state to reflect the new notes and exit edit mode
-                st.session_state[notes_key] = edited_notes
                 st.session_state[edit_key] = False
                 # Display a toast notification
                 st.toast(f'Updated notes for {template_name}', icon='🤖')
