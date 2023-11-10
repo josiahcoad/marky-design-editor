@@ -413,30 +413,29 @@ def display_notes(template_name, notes_from_db):
     col1, col2 = st.columns([1, 9])
 
     with col1:
-        # If the 'Edit Notes' button is pressed, toggle the edit mode
-        if st.button(f'{"Edit" if notes else "Add"} Notes',
-                     key=f'edit-notes-{template_name}'):
+        edit_button_label = 'Edit Notes' if st.session_state.get(notes_key, '') else 'Add Notes'
+        if st.button(edit_button_label, key=f'edit-notes-{template_name}'):
+            # Toggle the edit state
             st.session_state[edit_key] = not st.session_state.get(edit_key, False)
 
     with col2:
-        # Display text area if in edit mode
+        # If in edit mode, display the text area
         if st.session_state.get(edit_key, False):
-            # The text_area widget is directly linked to session_state, so its value is automatically updated
-            st.text_area('Notes', value=notes, key=notes_key)
-
-            if st.button('Save', key=f'save-{template_name}'):
-                # Perform the update operation using the value from session_state
+            notes = st.text_area('Notes', value=notes, key=notes_key)
+            save_button = st.button('Save', key=f'save-{template_name}')
+            if save_button:
+                # Perform the update operation
                 canvas_table.update_item(
                     Key={'name': template_name},
                     UpdateExpression='SET notes = :notes',
-                    ExpressionAttributeValues={':notes': st.session_state[notes_key]},
+                    ExpressionAttributeValues={':notes': notes},
                 )
+                # Hide the text area and display a toast
                 st.session_state[edit_key] = False
                 st.toast(f'Updated notes for {template_name}', icon='🤖')
         else:
-            # Display notes if not in edit mode
-            if notes:
-                st.text(f'Notes: {notes}')
+            # If not in edit mode, display the notes text
+            st.text(f'Notes: {notes}')
 
 
 def change_approval_status(template_name, approval_status):
