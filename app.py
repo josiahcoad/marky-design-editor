@@ -567,7 +567,7 @@ with st.sidebar:
         prod_themes_table = boto3.resource('dynamodb').Table('themes-prod')
         prod_canvas_table = boto3.resource('dynamodb').Table('switchboard-prod')
         for item in themes_table.scan()['Items']:
-            prod_themes_table.put_item(Item=theme)
+            prod_themes_table.put_item(Item=item)
         st.toast("Pushed themes to prod")
         for item in canvas_table.scan()['Items']:
             prod_canvas_table.put_item(Item=item)
