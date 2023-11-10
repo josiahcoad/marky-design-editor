@@ -219,36 +219,32 @@ def sb_template_to_db_components(sb_template: dict, text_meta: dict):
     return components
 
 
+s3_url_prefix = 'https://marky-image-posts.s3.amazonaws.com/'
+
 def upload_image_to_s3(image_url, object_name=None, bucket_name='marky-image-posts', prefix='thumbnails'):
     if not object_name:
         object_name = image_url.split('/')[-1].split('.')[0] + '.png'
-
     object_name = f'{prefix}/{object_name}'
-
     # Download the image from the URL
     s3_client = boto3.client('s3')
     response = requests.get(image_url)
     image = Image.open(BytesIO(response.content))
-
     # Resize the image to 500x500 pixels
     image = image.resize((500, 500))
-
     # Convert image to PNG
     buffer = BytesIO()
     image.save(buffer, format="PNG", optimize=True)  # Compress the image
     buffer.seek(0)
-
     # Upload the image to S3
     s3_client = boto3.client('s3')
     s3_client.upload_fileobj(buffer, bucket_name, object_name)
+    return s3_url_prefix + object_name
 
-    return f"https://{bucket_name}.s3.amazonaws.com/{object_name}"
 
-
-def list_s3_objects(bucket_name='marky-image-posts', prefix='thumnails'):
+def list_s3_objects(bucket_name='marky-image-posts', prefix='thumbnails'):
     s3_client = boto3.client('s3')
     response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
-    return [x['Key'] for x in response['Contents']]
+    return [s3_url_prefix + x['Key'] for x in response.get('Contents', [])]
 
 
 def get_filler_text(key, meta):
