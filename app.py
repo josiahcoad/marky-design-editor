@@ -435,7 +435,8 @@ def display_notes(template_name, notes_from_db):
                 st.toast(f'Updated notes for {template_name}', icon='🤖')
         else:
             # If not in edit mode, display the notes text
-            st.text(f'Notes: {notes}')
+            if notes:
+                st.text(f'Notes: {notes}')
 
 
 def change_approval_status(template_name, approval_status):
