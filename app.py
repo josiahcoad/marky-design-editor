@@ -77,11 +77,14 @@ def get_sb_templates():
     response = requests.get('https://www.switchboard.ai/api/canvas/templates', cookies=cookies, headers=headers)
     success = response.status_code == 200
     if not success:
-        st.markdown(f"Get new token [from switchboard](https://www.switchboard.ai/s/canvas)")
-        st.session_state[sb_token_st_key] = st.text_input('token')
-        if st.session_state[sb_token_st_key]:
-            refresh()
+        st.error(str(headers))
         st.stop()
+    # if not success:
+    #     st.markdown(f"Get new token [from switchboard](https://www.switchboard.ai/s/canvas)")
+    #     st.session_state[sb_token_st_key] = st.text_input('token')
+    #     if st.session_state[sb_token_st_key]:
+    #         refresh()
+    #     st.stop()
 
     templates = response.json()
 
