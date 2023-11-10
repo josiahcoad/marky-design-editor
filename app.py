@@ -431,12 +431,10 @@ def refresh():
     st.rerun()
 
 
-def display_notes(template_name, notes_from_db):
+def display_notes(template_name):
     # Unique keys for session state
     edit_key = f'edit-{template_name}'
-    notes_key = f'notes-{template_name}'
-    notes = st.session_state.get(notes_key, notes_from_db)
-
+    notes = db_data['notes'].get(template_name, '')
     col1, col2 = st.columns([1, 9])
 
     with col1:
@@ -448,7 +446,7 @@ def display_notes(template_name, notes_from_db):
     with col2:
         # If in edit mode, display the text area
         if st.session_state.get(edit_key, False):
-            edited_notes = st.text_area('Notes', value=notes, key=notes_key)
+            edited_notes = st.text_area('Notes', value=notes, key=f'notes-{template_name}')
             if st.button('Save', key=f'save-{template_name}'):
                 # Perform the update operation
                 canvas_table.update_item(
@@ -456,11 +454,11 @@ def display_notes(template_name, notes_from_db):
                     UpdateExpression='SET notes = :notes',
                     ExpressionAttributeValues={':notes': edited_notes},
                 )
+                st.session_state['db_data']['notes'][template_name] = edited_notes
                 # Update the session state to reflect the new notes and exit edit mode
                 st.session_state[edit_key] = False
                 # Display a toast notification
                 st.toast(f'Updated notes for {template_name}', icon='🤖')
-                st.rerun()
         # Display notes if not in edit mode and notes exist
         elif notes:
             st.text(f'Notes: {notes}')
@@ -474,12 +472,17 @@ def change_approval_status(template_name, approval_status):
     )
     # refresh()
 
-sb_data = get_sb_templates()
-if not st.session_state.get('my_thumbnails'):
-    st.session_state['my_thumbnails'] = list_s3_objects()
 
+sb_data = st.session_state.get('sb_data')
+if not sb_data:
+    st.session_state['sb_data'] = get_sb_templates()
+    sb_data = st.session_state['sb_data'] # read copy (write to st.session_state['sb_data'])
 
-db_data = get_db_templates()
+db_data = st.session_state.get('sb_data')
+if not db_data:
+    st.session_state['db_data'] = get_db_templates()
+    db_data = st.session_state['db_data']
+
 db_templates_for_diff = deepcopy(db_data['components'])
 for k, v in db_templates_for_diff.items():
     db_templates_for_diff[k]['text_keys'] = list(sorted(v['text_meta'].keys()))
