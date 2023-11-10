@@ -392,6 +392,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
             clickable_image(image_url, switchboard_template_url_prefix + template_id, image_size=300)
             upload_image_to_s3(image_url, template_name + '.png')
             st.session_state['my_thumbnails'][template_name] = image_url
+            st.rerun()
         else:
             st.error("Error filling canvas!")
 
@@ -450,6 +451,7 @@ def display_notes(template_name, notes_from_db):
                 st.session_state[edit_key] = False
                 # Display a toast notification
                 st.toast(f'Updated notes for {template_name}', icon='🤖')
+                st.rerun()
         # Display notes if not in edit mode and notes exist
         elif notes:
             st.text(f'Notes: {notes}')
@@ -564,11 +566,11 @@ with st.sidebar:
     if st.button('Push to Prod'):
         prod_themes_table = boto3.resource('dynamodb').Table('themes-prod')
         prod_canvas_table = boto3.resource('dynamodb').Table('switchboard-prod')
-        for name, theme in get_themes().items():
+        for item in themes_table.scan()['Items']:
             prod_themes_table.put_item(Item=theme)
         st.toast("Pushed themes to prod")
-        for name, template in get_db_templates().items():
-            prod_canvas_table.put_item(Item=template)
+        for item in canvas_table.scan()['Items']:
+            prod_canvas_table.put_item(Item=item)
         st.toast("Pushed templates to prod")
 
 # if (~df.matches).any():
