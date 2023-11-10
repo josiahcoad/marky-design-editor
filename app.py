@@ -454,13 +454,12 @@ def display_notes(template_name, notes_from_db):
 
 
 def change_approval_status(template_name, approval_status):
-    print(f'changing approval status for {template_name} to {approval_status}')
     canvas_table.update_item(
         Key={'name': template_name},
         UpdateExpression='SET approved = :approved',
         ExpressionAttributeValues={':approved': approval_status},
     )
-    refresh()
+    st.session_state['sb_data']['approved'][template_name] = approval_status
 
 
 if not st.session_state.get('sb_data'):
