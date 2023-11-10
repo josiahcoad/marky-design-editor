@@ -221,9 +221,7 @@ def sb_template_to_db_components(sb_template: dict, text_meta: dict):
 
 s3_url_prefix = 'https://marky-image-posts.s3.amazonaws.com/'
 
-def upload_image_to_s3(image_url, object_name=None, bucket_name='marky-image-posts', prefix='thumbnails'):
-    if not object_name:
-        object_name = image_url.split('/')[-1].split('.')[0] + '.png'
+def upload_image_to_s3(image_url, object_name, bucket_name='marky-image-posts', prefix='thumbnails'):
     object_name = f'{prefix}/{object_name}'
     # Download the image from the URL
     s3_client = boto3.client('s3')
@@ -393,7 +391,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
         image_url = fill_canvas(template_name, background_color, accent_color, text_color, background_url, logo_url, text_values)
         if image_url:
             clickable_image(image_url, switchboard_template_url_prefix + template_id, image_size=300)
-            upload_image_to_s3(image_url)
+            upload_image_to_s3(image_url, template_name + '.png')
         else:
             st.error("Error filling canvas!")
 
