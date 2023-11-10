@@ -392,7 +392,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
         if image_url:
             clickable_image(image_url, switchboard_template_url_prefix + template_id, image_size=300)
             upload_image_to_s3(image_url, template_name + '.png')
-            st.session_state['sb_data']['thumbnails'][template_name] = image_url
+            st.session_state['my_thumnails'][template_name] = image_url
         else:
             st.error("Error filling canvas!")
 
@@ -459,13 +459,12 @@ def change_approval_status(template_name, approval_status):
         UpdateExpression='SET approved = :approved',
         ExpressionAttributeValues={':approved': approval_status},
     )
-    st.session_state['sb_data']['approved'][template_name] = approval_status
+    # refresh()
 
+sb_data = get_sb_templates()
+if not st.session_state.get('my_thumnails'):
+    st.session_state['my_thumnails'] = deepcopy(sb_data['thumnails'])
 
-if not st.session_state.get('sb_data'):
-    st.session_state['sb_data'] = get_sb_templates() # we want to update this later
-
-sb_data = st.session_state['sb_data']
 
 db_data = get_db_templates()
 db_templates_for_diff = deepcopy(db_data['components'])
@@ -583,7 +582,9 @@ for row in df.head(load).itertuples():
     with cols[0]:
         if row.thumbnail:
             template_id = row.thumbnail.split('/')[-1].split('.')[0]
-            clickable_image(row.thumbnail, switchboard_template_url_prefix + template_id, image_size=image_size)
+            clickable_image(st.session_state['my_thumnails'].get(row.name) or row.thumbnail,
+                            switchboard_template_url_prefix + template_id,
+                            image_size=image_size)
     with cols[1]:
         approval_status = st.checkbox('Approved', value=row.approved, key=f'approval_status-{row.name}')
         if bool(approval_status) != bool(row.approved): # ie status changed
