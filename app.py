@@ -83,19 +83,9 @@ def get_sb_templates():
         'thumbnails': {x['apiName']: x['thumbnailUrl'] for x in templates},
     }
 
-def clickable_image(image_url, target_url, image_size=100):
-    markdown = f'<a href="{target_url}" target="_blank"><img src="{image_url}" width="{image_size}" height="{image_size}"></a>'
-    st.markdown(markdown, unsafe_allow_html=True)
-
 
 def db_template(components):
-    def has_image_named(name, require_svg=False):
-        if require_svg:
-            return any((x['type'] == 'IMAGE'
-                        and x['key'] == name
-                        and x.get('imageSvgFill')
-                        and x['url']['file']['filename'].endswith('svg'))
-                        for x in components)
+    def has_image_named(name):
         return any((x['type'] == 'IMAGE' and x['key'] == name) for x in components)
 
     def has_shape_named(name):
@@ -106,16 +96,29 @@ def db_template(components):
         'has_background_shape': has_shape_named('object1'),
         'has_logo': has_image_named('logo'),
         'has_logo_bg': has_image_named('logo-bg'),
-        'has_background_color': has_image_named('colored-layer-background', require_svg=True),
-        'has_accent_color': has_image_named('colored-layer', require_svg=True),
+        'has_background_color': has_image_named('colored-layer-background'),
+        'has_accent_color': has_image_named('colored-layer'),
         'text_meta': {x['key']: x for x in components if x['type'] == 'TEXT'},
     }
+
+
+def clickable_image(image_url, target_url, image_size=100):
+    markdown = f'<a href="{target_url}" target="_blank"><img src="{image_url}" width="{image_size}" height="{image_size}"></a>'
+    st.markdown(markdown, unsafe_allow_html=True)
+
 
 def switchboard_template(components):
     del components['template']
     components = components.values()
 
-    def has_image_named(name):
+    def has_image_named(name, require_svg=False):
+        if require_svg:
+            return any((x['type'] == 'IMAGE'
+                        and x['key'] == name
+                        and x['imageSvgFill']
+                        and x['url']['file']['filename'].endswith('svg'))
+                        for x in components)
+
         return any((x['type'] == 'image' and x['name'] == name) for x in components)
 
     def has_shape_named(name):
@@ -126,8 +129,8 @@ def switchboard_template(components):
         'has_background_shape': has_shape_named('object1'),
         'has_logo': has_image_named('logo'),
         'has_logo_bg': has_image_named('logo-bg'),
-        'has_background_color': has_image_named('colored-layer-background'),
-        'has_accent_color': has_image_named('colored-layer'),
+        'has_background_color': has_image_named('colored-layer-background', require_svg=True),
+        'has_accent_color': has_image_named('colored-layer', require_svg=True),
         'text_keys': sorted([x['name'] for x in components if x['type'] == 'text']),
     }
 
