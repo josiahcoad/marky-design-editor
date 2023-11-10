@@ -242,7 +242,7 @@ def upload_image_to_s3(image_url, object_name, bucket_name='marky-image-posts', 
 def list_s3_objects(bucket_name='marky-image-posts', prefix='thumbnails'):
     s3_client = boto3.client('s3')
     response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
-    return {x['Key'].split('.')[0]: (s3_url_prefix + x['Key']) for x in response.get('Contents', [])}
+    return {x['Key'].removeprefix(prefix).split('.')[0]: (s3_url_prefix + x['Key']) for x in response.get('Contents', [])}
 
 
 def get_filler_text(key, meta):
