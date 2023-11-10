@@ -88,9 +88,11 @@ def get_sb_templates():
 
     templates = response.json()
 
+    my_thumbnails = list_s3_objects()
     return {
         'components': {x['apiName']: switchboard_template(x['configuration']) for x in templates if x['configuration']},
-        'thumbnails': {x['apiName']: x['thumbnailUrl']  for x in templates},
+        'thumbnails': {x['apiName']: my_thumbnails.get(x['apiName'], x['thumbnailUrl'])  for x in templates},
+        'template_id': {x['apiName']: x['id']  for x in templates},
     }
 
 
@@ -108,7 +110,16 @@ def db_template(components):
         'has_logo_bg': has_image_named('logo-bg'),
         'has_background_color': has_image_named('colored-layer-background'),
         'has_accent_color': has_image_named('colored-layer'),
-        'text_meta': {x['key']: x for x in components if x['type'] == 'TEXT'},
+        'text_meta': {x['key']: extract_meta(x) for x in components if x['type'] == 'TEXT'},
+    }
+
+
+def extract_meta(db_text_component):
+    return {
+        'max_characters': int(db_text_component['max_characters']),
+        'all_caps': db_text_component.get('all_caps', False),
+        'text_color_type': db_text_component.get('text_color_type', 'DONT_CHANGE'),
+        'optional': db_text_component.get('optional', False),
     }
 
 
@@ -273,8 +284,6 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
     st.subheader('Text Containers')
     new_meta = {}
     old_meta = db_template['text_meta'] if db_template else {}
-    old_meta = {k: {**v, 'max_characters': int(v['max_characters'])} for k, v in old_meta.items()} if old_meta else {}
-    old_meta_subset = {}
     for key in sb_template['text_keys']:
         old_field_meta = old_meta.get(key, {}) if db_template else {}
         cols = st.columns(5)
@@ -306,25 +315,25 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
             'text_color_type': text_color_type,
             'optional': optional,
         }
-        old_meta_subset[key] = {
-            'max_characters': old_field_meta.get('max_characters'),
-            'all_caps': old_field_meta.get('all_caps', False),
-            'text_color_type': old_field_meta.get('text_color_type', 'DONT_CHANGE'),
-            'optional': old_field_meta.get('optional', False),
-        }
 
 
     # set defaults
-    background_url = default_background_url = "https://images.unsplash.com/photo-1694459471238-6e55eb657848?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwyfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85"
-    logo_url = default_logo_url = 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg'
-    background_color = default_background_color = "#ecc9bf"
-    accent_color = default_accent_color = "#cf3a72" # pink
-    text_color = default_text_color = "#064e84" # blue
-    text_values = default_text_values = {key: get_filler_text(key, meta) for key, meta in new_meta.items()}
-    values_changed = False
+    fill_values_st_key = f'fill_values_{template_name}'
+    fill_values = st.session_state.get(fill_values_st_key)
+    if not fill_values:
+        fill_values = st.session_state[fill_values_st_key] = {
+            'background_url': "https://images.unsplash.com/photo-1694459471238-6e55eb657848?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwyfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
+            'logo_url': 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg',
+            'background_color': "#ecc9bf",
+            'accent_color': "#cf3a72", # pink
+            'text_color': "#064e84", # blue
+            'text_content': {key: get_filler_text(key, meta) for key, meta in new_meta.items()},
+        }
 
+    values_changed = False
+    new_fill_values = {}
     # Configuration for values
-    if st.checkbox('Adjust Fill Values', key=f'adjust-values-{template_name}'):
+    if st.checkbox('Change Fill Values', key=f'adjust-values-{template_name}'):
 
         selectors = len([sb_template[key]
                         for key in ('has_background_image', 'has_background_shape', 'has_logo', 'has_background_color', 'has_accent_color')
@@ -336,85 +345,81 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
         col = 0
         if sb_template['has_background_image']:
             with cols[0]:
-                background_choice = st.radio('Select a background image:',
-                                            ('Image 1', 'Image 2', 'Image 3'),
-                                            index=0,
-                                            key=f'background_choice-{template_name}')
                 # Mapping choice to URL
                 background_urls = {
                     'Image 1': "https://images.unsplash.com/photo-1694459471238-6e55eb657848?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwyfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
                     'Image 2': "https://images.unsplash.com/photo-1695331453337-d5f95078f78e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwxfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
                     'Image 3': "https://images.unsplash.com/photo-1694472655814-71e6c5a7ade8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwzfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
                 }
+                old_index = list(background_urls.values()).index(fill_values['background_url'])
+                background_choice = st.radio('Select a background image:',
+                                            ('Image 1', 'Image 2', 'Image 3'),
+                                            index=old_index,
+                                            key=f'background_choice-{template_name}')
                 assert background_choice is not None
-                background_url = background_urls[background_choice]
-                st.image(background_url, width=300)
+                new_fill_values['background_url'] = background_urls[background_choice]
+                st.image(new_fill_values['background_url'], width=300)
             col += 1
 
         if sb_template['has_logo']:
             with cols[col]:
-                logo_choice = st.radio('Select a logo:', ('Logo 1', 'Logo 2', 'Logo 3'), index=0, key=f'logo_choice-{template_name}')
-                assert logo_choice is not None
                 logo_urls = {
                     'Logo 1': 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg',
                     'Logo 2': 'https://marky-image-posts.s3.amazonaws.com/380106565_1398612124371856_5370535347247435473_n.png',
                     'Logo 3': 'https://marky-image-posts.s3.amazonaws.com/pearlite%20emporium%20logo.jpg',
                 }
-                logo_url = logo_urls[logo_choice]
-                st.image(logo_url, width=100)
+                old_index = list(logo_urls.values()).index(fill_values['logo_url'])
+                logo_choice = st.radio('Select a logo:', ('Logo 1', 'Logo 2', 'Logo 3'), index=old_index, key=f'logo_choice-{template_name}')
+                assert logo_choice is not None
+                new_fill_values['logo_choice'] = logo_urls[logo_choice]
+                st.image(new_fill_values['logo_choice'], width=100)
             col += 1
 
         if sb_template['has_accent_color']:
             with cols[col]:
-                accent_color = st.color_picker('Accent Color', value=default_accent_color, key=f'accent_color-{template_name}')
+                new_fill_values['accent_color'] = st.color_picker('Accent Color', value=fill_values['accent_color'], key=f'accent_color-{template_name}')
             col += 1
 
         if sb_template['has_background_color']:
             with cols[col]:
-                background_color = st.color_picker('Background Color', value=default_background_color, key=f'background_color-{template_name}')
+                new_fill_values['background_color'] = st.color_picker('Background Color', value=fill_values['background_color'], key=f'background_color-{template_name}')
             col += 1
 
         if any(field_meta['text_color_type'] not in ('ACCENT', 'DONT_CHANGE') for field_meta in new_meta.values()):
             with cols[col]:
-                text_color = st.color_picker('Text Color', value=default_text_color, key=f'text_color-{template_name}')
+                new_fill_values['text_color'] = st.color_picker('Text Color', value=fill_values['text_color'], key=f'text_color-{template_name}')
             col += 1
 
-        text_values = {key: st.text_area(key, value=value, key=f'{key}-{template_name}')
-                        for key, value in default_text_values.items()}
-        
-        values_changed = (background_url != default_background_url
-                          or logo_url != default_logo_url
-                          or background_color != default_background_color
-                          or accent_color != default_accent_color
-                          or text_color != default_text_color
-                          or any(text_values[key] != get_filler_text(key, meta) for key, meta in new_meta.items()))
+        new_fill_values['text_content'] = {key: st.text_area(key, value=value, key=f'{key}-{template_name}')
+                                           for key, value in fill_values['text_content'].items()}
 
-    if st.button("Update DB & Demo", key=f'demo-{template_name}') or (old_meta_subset != new_meta) or values_changed:
+        values_changed = any(fill_values[key] != new_fill_values[key] for key in new_fill_values)
+        st.session_state[fill_values_st_key] = new_fill_values
+
+    if st.button("Update DB & Demo", key=f'demo-{template_name}') or (old_meta != new_meta) or values_changed:
         canvas_table.update_item(
             Key={'name': template_name},
             UpdateExpression='SET components = :components',
             ExpressionAttributeValues={':components': sb_template_to_db_components(sb_template, new_meta)},
         )
-        st.toast("Requesting new image...")
-        image_url = fill_canvas(template_name, background_color, accent_color, text_color, background_url, logo_url, text_values)
+        st.toast(f"Requesting new image for {template_name}...")
+        st.text('Loading...')
+        image_url = fill_canvas(template_name, st.session_state[fill_values_st_key])
         if image_url:
-            clickable_image(image_url, switchboard_template_url_prefix + template_id, image_size=300)
+            st.text('Done')
+            # clickable_image(image_url, switchboard_template_url_prefix + template_id, image_size=300)
             upload_image_to_s3(image_url, template_name + '.png')
-            st.session_state['my_thumbnails'][template_name] = image_url
-            refresh()
+            st.session_state['db_data']['components'][template_name]['text_meta'] = new_meta
+            st.session_state['sb_data']['thumbnails'][template_name] = image_url
+            st.rerun()
         else:
             st.error("Error filling canvas!")
 
 
-def fill_canvas(template_name, background_color, accent_color, text_color, background_url, logo_url, text_fields):
+def fill_canvas(template_name, fill_values):
     payload = {
         'template_name': template_name,
-        'background_color': background_color,
-        'accent_color': accent_color,
-        'text_color': text_color,
-        'background_image_url': background_url,
-        'logo_url': logo_url,
-        'text_fields': text_fields,
+        **fill_values
     }
 
     response = requests.post(dev_url + '/v1/posts/fill-canvas',
@@ -459,6 +464,7 @@ def display_notes(template_name):
                 st.session_state[edit_key] = False
                 # Display a toast notification
                 st.toast(f'Updated notes for {template_name}', icon='🤖')
+                st.rerun()
         # Display notes if not in edit mode and notes exist
         elif notes:
             st.text(f'Notes: {notes}')
@@ -470,7 +476,7 @@ def change_approval_status(template_name, approval_status):
         UpdateExpression='SET approved = :approved',
         ExpressionAttributeValues={':approved': approval_status},
     )
-    # refresh()
+    st.session_state['db_data']['approved'][template_name] = approval_status
 
 
 sb_data = st.session_state.get('sb_data')
@@ -478,15 +484,15 @@ if not sb_data:
     st.session_state['sb_data'] = get_sb_templates()
     sb_data = st.session_state['sb_data'] # read copy (write to st.session_state['sb_data'])
 
-db_data = st.session_state.get('sb_data')
+db_data = st.session_state.get('db_data')
 if not db_data:
     st.session_state['db_data'] = get_db_templates()
     db_data = st.session_state['db_data']
 
 db_templates_for_diff = deepcopy(db_data['components'])
-for k, v in db_templates_for_diff.items():
-    db_templates_for_diff[k]['text_keys'] = list(sorted(v['text_meta'].keys()))
-    del db_templates_for_diff[k]['text_meta']
+for template_name, template in db_templates_for_diff.items():
+    db_templates_for_diff[template_name]['text_keys'] = list(sorted(template['text_meta'].keys()))
+    del db_templates_for_diff[template_name]['text_meta']
 
 
 template_names = list(set(sb_data['components'].keys()).union(db_data['components'].keys()))
@@ -514,18 +520,18 @@ df['name'] = df.index
 
 # add filters in a  sidebar
 with st.sidebar:
-    with st.expander('Filters'):
-        theme_names = [None] + list(df.theme.unique())
-        color_editable = {name: get_themes().get(name, {}).get('color_editable', False) for name in theme_names}
-        template_name = st.text_input('Template Name')
-        if template_name:
-            df = df[df.name.str.contains(template_name, case=False)]
-        theme = st.selectbox('Theme',
-                            options=[None] + list(df.theme.unique()),
-                            index=0,
-                            format_func=lambda x: f'{x} {"(color)" if color_editable[x] else ""}')
-        if theme:
-            df = df[df.theme == theme]
+    template_name = st.text_input('Search Template Name')
+    if template_name:
+        df = df[df.name.str.contains(template_name, case=False)]
+    theme_names = list(df.theme.unique()) + [None]
+    color_editable = {name: get_themes().get(name, {}).get('color_editable', False) for name in theme_names}
+    theme = st.selectbox('Theme',
+                        options=theme_names,
+                        index=0,
+                        format_func=lambda x: f'{x} {"(color)" if color_editable[x] else ""}')
+    if theme:
+        df = df[df.theme == theme]
+    with st.expander('More Filters'):
         filter_matched = st.selectbox('Matching', options=[None, True, False], index=0)
         if filter_matched is not None:
             df = df[df.matches == filter_matched]
@@ -569,7 +575,6 @@ with st.sidebar:
                 UpdateExpression='SET color_editable = :colored',
                 ExpressionAttributeValues={':colored': not color_editable[theme]},
             )
-            st.text('Done')
             refresh()
 
     if st.button('Pull Data'):
@@ -597,8 +602,8 @@ for row in df.head(load).itertuples():
     cols = st.columns(6)
     with cols[0]:
         if row.thumbnail:
-            template_id = row.thumbnail.split('/')[-1].split('.')[0]
-            clickable_image(st.session_state['my_thumbnails'].get(row.name) or row.thumbnail,
+            template_id = st.session_state['sb_data']['template_id'][row.name]
+            clickable_image(st.session_state['sb_data']['thumbnails'][row.name],
                             switchboard_template_url_prefix + template_id,
                             image_size=image_size)
     with cols[1]:
@@ -623,7 +628,7 @@ for row in df.head(load).itertuples():
 
 
     if row.in_sb:
-        display_notes(row.name, row.notes)
+        display_notes(row.name)
         with st.expander(row.name):
             display_template_components(row.name, row.sb, row.db)
     if row.in_db and not row.in_sb:
