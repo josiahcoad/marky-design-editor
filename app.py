@@ -32,7 +32,7 @@ cookies = {
 
 ipsem = "This Python package runs a Markov chain algorithm over the surviving works of the Roman historian Tacitus to generate naturalistic-looking pseudo-Latin gibberish. Useful when you need to generate dummy text as a placeholder in templates, etc. Brigantes femina duce exurere coloniam, expugnare castra, ac nisi felicitas in tali"
 
-
+switchboard_template_url_prefix = "https://www.switchboard.ai/s/canvas/editor/"
 
 sb_token_st_key = 'sb_token'
 headers = {
@@ -384,14 +384,18 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
                           or any(text_values[key] != get_filler_text(key, meta) for key, meta in new_meta.items()))
 
     if st.button("Update DB & Demo", key=f'demo-{template_name}') or (old_meta_subset != new_meta) or values_changed:
-        print(f"now updating components from {old_meta_subset} to {new_meta} -- diff {get_json_diff(old_meta_subset, new_meta)}!")
         canvas_table.update_item(
             Key={'name': template_name},
             UpdateExpression='SET components = :components',
             ExpressionAttributeValues={':components': sb_template_to_db_components(sb_template, new_meta)},
         )
         st.toast("Requesting new image...")
-        fill_canvas(template_name, background_color, accent_color, text_color, background_url, logo_url, text_values)
+        image_url = fill_canvas(template_name, background_color, accent_color, text_color, background_url, logo_url, text_values)
+        if image_url:
+            clickable_image(image_url, switchboard_template_url_prefix + template_id, size=300)
+            upload_image_to_s3(image_url)
+        else:
+            st.error("Error filling canvas!")
 
 
 def fill_canvas(template_name, background_color, accent_color, text_color, background_url, logo_url, text_fields):
@@ -408,10 +412,7 @@ def fill_canvas(template_name, background_color, accent_color, text_color, backg
     response = requests.post(dev_url + '/v1/posts/fill-canvas',
                              json=payload,
                              headers={'Authorization': f'Bearer {dev_token}'}).json()
-    if 'image_url' in response:
-        st.image(response['image_url'], width=300)
-    else:
-        st.error(str(response))
+    return response.get('image_url')
 
 
 def refresh():
@@ -580,7 +581,7 @@ for row in df.head(load).itertuples():
     with cols[0]:
         if row.thumbnail:
             template_id = row.thumbnail.split('/')[-1].split('.')[0]
-            clickable_image(row.thumbnail, f'https://www.switchboard.ai/s/canvas/editor/{template_id}', image_size=image_size)
+            clickable_image(row.thumbnail, switchboard_template_url_prefix + template_id, image_size=image_size)
     with cols[1]:
         approval_status = st.checkbox('Approved', value=row.approved, key=f'approval_status-{row.name}')
         if bool(approval_status) != bool(row.approved): # ie status changed
