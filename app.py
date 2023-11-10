@@ -111,7 +111,7 @@ def db_template(components):
         if require_svg:
             return any((x['type'] == 'IMAGE'
                         and x['key'] == name
-                        and x['imageSvgFill']
+                        and x.get('imageSvgFill')
                         and x['url']['file']['filename'].endswith('svg'))
                         for x in components)
         return any((x['type'] == 'IMAGE' and x['key'] == name) for x in components)
