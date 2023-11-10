@@ -262,6 +262,7 @@ def get_filler_text(key, meta):
 
 # Function to display row details and handle the demo button functionality
 def display_template_components(template_name: str, sb_template: dict, db_template: dict | None):
+    global sb_data
     st.subheader('Text Containers')
     new_meta = {}
     old_meta = db_template['text_meta'] if db_template else {}
@@ -392,6 +393,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
         if image_url:
             clickable_image(image_url, switchboard_template_url_prefix + template_id, image_size=300)
             upload_image_to_s3(image_url, template_name + '.png')
+            sb_data['thumbnails'][template_name] = image_url
         else:
             st.error("Error filling canvas!")
 
@@ -462,7 +464,10 @@ def change_approval_status(template_name, approval_status):
     refresh()
 
 
-sb_data = get_sb_templates() # we want to update this later
+sb_data = None
+if not st.session_state.get('sb_data'):
+    st.session_state['sb_data'] = get_sb_templates() # we want to update this later
+    sb_data = st.session_state['sb_data']
 db_data = get_db_templates()
 db_templates_for_diff = deepcopy(db_data['components'])
 for k, v in db_templates_for_diff.items():
