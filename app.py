@@ -79,10 +79,9 @@ def get_sb_templates():
 
     templates = response.json()
 
-    my_thumbnails = list_s3_objects()
     return {
         'components': {x['apiName']: switchboard_template(x['configuration']) for x in templates if x['configuration']},
-        'thumbnails': {x['apiName']: my_thumbnails.get(x['apiName']) or x['thumbnailUrl']  for x in templates},
+        'thumbnails': {x['apiName']: x['thumbnailUrl']  for x in templates},
     }
 
 
@@ -463,7 +462,7 @@ def change_approval_status(template_name, approval_status):
 
 sb_data = get_sb_templates()
 if not st.session_state.get('my_thumbnails'):
-    st.session_state['my_thumbnails'] = deepcopy(sb_data['thumbnails'])
+    st.session_state['my_thumbnails'] = list_s3_objects()
 
 
 db_data = get_db_templates()
