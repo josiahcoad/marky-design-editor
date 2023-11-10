@@ -115,7 +115,7 @@ def switchboard_template(components):
 
     def has_image_named(name, require_svg=False):
         if require_svg:
-            return any((x['type'] == 'IMAGE'
+            return any((x['type'] == 'image'
                         and x['key'] == name
                         and x['imageSvgFill']
                         and x['url']['file']['filename'].endswith('svg'))
