@@ -107,7 +107,13 @@ def clickable_image(image_url, target_url, image_size=100):
 
 
 def db_template(components):
-    def has_image_named(name):
+    def has_image_named(name, require_svg=False):
+        if require_svg:
+            return any((x['type'] == 'IMAGE'
+                        and x['key'] == name
+                        and x['imageSvgFill']
+                        and x['url']['file']['filename'].endswith('svg'))
+                        for x in components)
         return any((x['type'] == 'IMAGE' and x['key'] == name) for x in components)
 
     def has_shape_named(name):
@@ -118,8 +124,8 @@ def db_template(components):
         'has_background_shape': has_shape_named('object1'),
         'has_logo': has_image_named('logo'),
         'has_logo_bg': has_image_named('logo-bg'),
-        'has_background_color': has_image_named('colored-layer-background'),
-        'has_accent_color': has_image_named('colored-layer'),
+        'has_background_color': has_image_named('colored-layer-background', require_svg=True),
+        'has_accent_color': has_image_named('colored-layer', require_svg=True),
         'text_meta': {x['key']: x for x in components if x['type'] == 'TEXT'},
     }
 
