@@ -392,7 +392,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
         st.toast("Requesting new image...")
         image_url = fill_canvas(template_name, background_color, accent_color, text_color, background_url, logo_url, text_values)
         if image_url:
-            clickable_image(image_url, switchboard_template_url_prefix + template_id, size=300)
+            clickable_image(image_url, switchboard_template_url_prefix + template_id, image_size=300)
             upload_image_to_s3(image_url)
         else:
             st.error("Error filling canvas!")
