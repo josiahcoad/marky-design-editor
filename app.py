@@ -35,11 +35,17 @@ ipsem = "This Python package runs a Markov chain algorithm over the surviving wo
 switchboard_template_url_prefix = "https://www.switchboard.ai/s/canvas/editor/"
 
 sb_token_st_key = 'sb_token'
+
+if not st.session_state.get(sb_token_st_key):
+    st.markdown(f"Get new token [from switchboard](https://www.switchboard.ai/s/canvas)")
+    st.session_state[sb_token_st_key] = st.text_input('token')
+    st.stop()
+
 headers = {
     'authority': 'www.switchboard.ai',
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'en-US,en;q=0.9',
-    'authorization': f"Bearer {st.session_state.get(sb_token_st_key)}",
+    'authorization': f"Bearer {st.session_state[sb_token_st_key]}",
 }
 
 
@@ -392,7 +398,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
             clickable_image(image_url, switchboard_template_url_prefix + template_id, image_size=300)
             upload_image_to_s3(image_url, template_name + '.png')
             st.session_state['my_thumbnails'][template_name] = image_url
-            st.rerun()
+            refresh()
         else:
             st.error("Error filling canvas!")
 
