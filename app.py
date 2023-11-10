@@ -5,26 +5,8 @@ import pandas as pd
 import streamlit as st
 import boto3
 import requests
-# from io import BytesIO
-# from PIL import Image
-
-# def upload_image_to_s3(image_url, bucket_name, object_name):
-#     # Download the image from the URL
-#     response = requests.get(image_url)
-#     image = Image.open(BytesIO(response.content))
-
-#     # Resize the image to 500x500 pixels
-#     image = image.resize((500, 500))
-
-#     # Convert image to PNG
-#     buffer = BytesIO()
-#     image.save(buffer, format="PNG", optimize=True)  # Compress the image
-#     buffer.seek(0)
-
-#     # Upload the image to S3
-#     s3_client.upload_fileobj(buffer, bucket_name, object_name)
-
-#     print(f"Image uploaded to S3 bucket {bucket_name} with key {object_name}")
+from io import BytesIO
+from PIL import Image
 
 
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
@@ -232,6 +214,30 @@ def sb_template_to_db_components(sb_template: dict, text_meta: dict):
     return components
 
 
+def upload_image_to_s3(image_url, object_name=None, bucket_name='marky-image-posts'):
+    if not object_name:
+        object_name = image_url.split('/')[-1]
+
+    # Download the image from the URL
+    s3_client = boto3.client('s3')
+    response = requests.get(image_url)
+    image = Image.open(BytesIO(response.content))
+
+    # Resize the image to 500x500 pixels
+    image = image.resize((500, 500))
+
+    # Convert image to PNG
+    buffer = BytesIO()
+    image.save(buffer, format="PNG", optimize=True)  # Compress the image
+    buffer.seek(0)
+
+    # Upload the image to S3
+    s3_client = boto3.client('s3')
+    s3_client.upload_fileobj(buffer, bucket_name, object_name)
+
+    return f"https://{bucket_name}.s3.amazonaws.com/{object_name}"
+
+
 def get_filler_text(key, meta):
     if meta['optional']:
         return ''
@@ -413,7 +419,7 @@ def display_notes(template_name, notes_from_db):
     col1, col2 = st.columns([1, 9])
 
     with col1:
-        edit_button_label = 'Edit Notes' if st.session_state.get(notes_key, '') else 'Add Notes'
+        edit_button_label = 'Edit Notes' if notes else 'Add Notes'
         if st.button(edit_button_label, key=f'edit-notes-{template_name}'):
             # Toggle the edit state
             st.session_state[edit_key] = not st.session_state.get(edit_key, False)
@@ -421,22 +427,22 @@ def display_notes(template_name, notes_from_db):
     with col2:
         # If in edit mode, display the text area
         if st.session_state.get(edit_key, False):
-            notes = st.text_area('Notes', value=notes, key=notes_key)
-            save_button = st.button('Save', key=f'save-{template_name}')
-            if save_button:
+            edited_notes = st.text_area('Notes', value=notes, key=notes_key)
+            if st.button('Save', key=f'save-{template_name}'):
                 # Perform the update operation
                 canvas_table.update_item(
                     Key={'name': template_name},
                     UpdateExpression='SET notes = :notes',
-                    ExpressionAttributeValues={':notes': notes},
+                    ExpressionAttributeValues={':notes': edited_notes},
                 )
-                # Hide the text area and display a toast
+                # Update the session state to reflect the new notes and exit edit mode
+                st.session_state[notes_key] = edited_notes
                 st.session_state[edit_key] = False
+                # Display a toast notification
                 st.toast(f'Updated notes for {template_name}', icon='🤖')
-        else:
-            # If not in edit mode, display the notes text
-            if notes:
-                st.text(f'Notes: {notes}')
+        # Display notes if not in edit mode and notes exist
+        elif notes:
+            st.text(f'Notes: {notes}')
 
 
 def change_approval_status(template_name, approval_status):
@@ -449,7 +455,7 @@ def change_approval_status(template_name, approval_status):
     refresh()
 
 
-sb_data = get_sb_templates()
+sb_data = get_sb_templates() # we want to update this later
 db_data = get_db_templates()
 db_templates_for_diff = deepcopy(db_data['components'])
 for k, v in db_templates_for_diff.items():
