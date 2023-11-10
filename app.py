@@ -409,8 +409,11 @@ def fill_canvas(template_name, background_color, accent_color, text_color, backg
 
     response = requests.post(dev_url + '/v1/posts/fill-canvas',
                              json=payload,
-                             headers={'Authorization': f'Bearer {dev_token}'}).json()
-    return response.get('image_url')
+                             headers={'Authorization': f'Bearer {dev_token}'})
+    if not response.ok:
+        st.error(response.text)
+        return None
+    return response.json()['image_url']
 
 
 def refresh():
