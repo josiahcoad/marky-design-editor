@@ -392,7 +392,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
         if image_url:
             clickable_image(image_url, switchboard_template_url_prefix + template_id, image_size=300)
             upload_image_to_s3(image_url, template_name + '.png')
-            st.session_state['my_thumnails'][template_name] = image_url
+            st.session_state['my_thumbnails'][template_name] = image_url
         else:
             st.error("Error filling canvas!")
 
@@ -462,8 +462,8 @@ def change_approval_status(template_name, approval_status):
     # refresh()
 
 sb_data = get_sb_templates()
-if not st.session_state.get('my_thumnails'):
-    st.session_state['my_thumnails'] = deepcopy(sb_data['thumnails'])
+if not st.session_state.get('my_thumbnails'):
+    st.session_state['my_thumbnails'] = deepcopy(sb_data['thumbnails'])
 
 
 db_data = get_db_templates()
@@ -582,7 +582,7 @@ for row in df.head(load).itertuples():
     with cols[0]:
         if row.thumbnail:
             template_id = row.thumbnail.split('/')[-1].split('.')[0]
-            clickable_image(st.session_state['my_thumnails'].get(row.name) or row.thumbnail,
+            clickable_image(st.session_state['my_thumbnails'].get(row.name) or row.thumbnail,
                             switchboard_template_url_prefix + template_id,
                             image_size=image_size)
     with cols[1]:
