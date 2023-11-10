@@ -306,7 +306,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
 
 
     # set defaults
-    background_url = default_background_url =  "https://images.unsplash.com/photo-1695331453337-d5f95078f78e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwxfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85"
+    background_url = default_background_url = "https://images.unsplash.com/photo-1694459471238-6e55eb657848?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwyfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85"
     logo_url = default_logo_url = 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg'
     background_color = default_background_color = "#ecc9bf"
     accent_color = default_accent_color = "#cf3a72" # pink
@@ -333,8 +333,8 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
                                             key=f'background_choice-{template_name}')
                 # Mapping choice to URL
                 background_urls = {
-                    'Image 1': "https://images.unsplash.com/photo-1695331453337-d5f95078f78e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwxfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
-                    'Image 2': "https://images.unsplash.com/photo-1694459471238-6e55eb657848?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwyfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
+                    'Image 1': "https://images.unsplash.com/photo-1694459471238-6e55eb657848?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwyfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
+                    'Image 2': "https://images.unsplash.com/photo-1695331453337-d5f95078f78e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwxfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
                     'Image 3': "https://images.unsplash.com/photo-1694472655814-71e6c5a7ade8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwzfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
                 }
                 assert background_choice is not None
@@ -347,9 +347,9 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
                 logo_choice = st.radio('Select a logo:', ('Logo 1', 'Logo 2', 'Logo 3'), index=0, key=f'logo_choice-{template_name}')
                 assert logo_choice is not None
                 logo_urls = {
-                    'Logo 1': 'https://marky-image-posts.s3.amazonaws.com/380106565_1398612124371856_5370535347247435473_n.png',
-                    'Logo 2': 'https://marky-image-posts.s3.amazonaws.com/pearlite%20emporium%20logo.jpg',
-                    'Logo 3': 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg',
+                    'Logo 1': 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg',
+                    'Logo 2': 'https://marky-image-posts.s3.amazonaws.com/380106565_1398612124371856_5370535347247435473_n.png',
+                    'Logo 3': 'https://marky-image-posts.s3.amazonaws.com/pearlite%20emporium%20logo.jpg',
                 }
                 logo_url = logo_urls[logo_choice]
                 st.image(logo_url, width=100)
