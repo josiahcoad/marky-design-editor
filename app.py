@@ -343,24 +343,27 @@ def display_text_containers(template_name: str, sb_template: dict, db_template: 
 
 
 def reload_image(template_name, sb_template, meta):
-        CANVAS_TABLE.update_item(
-            Key={'name': template_name},
-            UpdateExpression='SET components = :components',
-            ExpressionAttributeValues={':components': sb_template_to_db_components(sb_template, meta)},
-        )
-        st.session_state['db_data']['components'][template_name] = \
-            get_db_template(sb_template_to_db_components(sb_template, meta))
-        st.toast(f"Requesting new image for {template_name}...")
-        st.text('Loading...')
-        image_url = fill_canvas(template_name, st.session_state[FILL_VALUES_ST_KEY], meta)
-        if image_url:
-            st.text('Done')
-            upload_image_to_s3(image_url, template_name + '.png')
-            st.session_state['db_data']['components'][template_name]['text_meta'] = meta
-            st.session_state['sb_data']['thumbnails'][template_name] = image_url
-            st.rerun()
-        else:
-            st.error("Error filling canvas!")
+    CANVAS_TABLE.update_item(
+        Key={'name': template_name},
+        UpdateExpression='SET components = :components',
+        ExpressionAttributeValues={':components': sb_template_to_db_components(sb_template, meta)},
+    )
+    st.session_state['db_data']['components'][template_name] = \
+        get_db_template(sb_template_to_db_components(sb_template, meta))
+    st.text('Loading...')
+    fill_canvas_and_update_thumbnail(template_name, meta)
+    st.text('Done')
+
+
+def fill_canvas_and_update_thumbnail(template_name, meta):
+    st.toast(f"Requesting new image for {template_name}...")
+    image_url = fill_canvas(template_name, st.session_state[FILL_VALUES_ST_KEY], meta)
+    if image_url:
+        upload_image_to_s3(image_url, template_name + '.png')
+        st.session_state['sb_data']['thumbnails'][template_name] = image_url
+        st.rerun()
+    else:
+        st.error("Error filling canvas!")
 
 
 def fill_canvas(template_name, fill_values, meta):
@@ -388,7 +391,7 @@ def refresh():
     st.rerun()
 
 
-def display_notes(template_name, sb_template, text_meta):
+def display_action_bar(template_name, sb_template, text_meta):
     # Unique keys for session state
     edit_key = f'edit-{template_name}'
     notes = db_data['notes'].get(template_name, '')
@@ -616,7 +619,7 @@ for row in df.head(load).itertuples():
 
 
     if row.in_sb:
-        display_notes(row.name, row.sb, db_data['components'].get(row.name, {}).get('text_meta'))
+        display_action_bar(row.name, row.sb, db_data['components'].get(row.name, {}).get('text_meta'))
         with st.expander(row.name):
             display_text_containers(row.name, row.sb, row.db)
     if row.in_db and not row.in_sb:
