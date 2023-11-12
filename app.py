@@ -14,38 +14,64 @@ os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 st.set_page_config(layout='wide')
 
 
+logo_urls = {
+    'Logo 1': 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg',
+    'Logo 2': 'https://marky-image-posts.s3.amazonaws.com/380106565_1398612124371856_5370535347247435473_n.png',
+    'Logo 3': 'https://marky-image-posts.s3.amazonaws.com/pearlite%20emporium%20logo.jpg',
+}
+
+background_urls = {
+    'Image 1': "https://images.unsplash.com/photo-1694459471238-6e55eb657848?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwyfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
+    'Image 2': "https://images.unsplash.com/photo-1695331453337-d5f95078f78e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwxfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
+    'Image 3': "https://images.unsplash.com/photo-1694472655814-71e6c5a7ade8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwzfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
+}
+
+text_content = {
+    'title': "I wish I knew this when I started! It would have saved me a lot of time and money.",
+    'content': "Start with the minimum viable product. Don't try to build the perfect product from the start. If you do, you'll waste a lot of time and money.",
+    'cta': "Get started today! It's free to sign up and you can cancel anytime.",
+    'content1': "Start with the minimum viable product. Don't try to build the perfect product from the start. If you do, you'll waste a lot of time and money.",
+    'content2': "Start with the minimum viable product. Don't try to build the perfect product from the start. If you do, you'll waste a lot of time and money.",
+}
 
 ipsem = "This Python package runs a Markov chain algorithm over the surviving works of the Roman historian Tacitus to generate naturalistic-looking pseudo-Latin gibberish. Useful when you need to generate dummy text as a placeholder in templates, etc. Brigantes femina duce exurere coloniam, expugnare castra, ac nisi felicitas in tali"
 
 switchboard_template_url_prefix = "https://www.switchboard.ai/s/canvas/editor/"
+S3_URL_PREFIX = 'https://marky-image-posts.s3.amazonaws.com/'
 
-sb_token_st_key = 'sb_token'
+SB_TOKEN_ST_KEY = 'sb_token'
+FILL_VALUES_ST_KEY = 'fill_values'
 
-if not st.session_state.get(sb_token_st_key):
-    st.markdown(f"Get new token [from switchboard](https://www.switchboard.ai/s/canvas)")
-    text = st.text_input('token')
-    if st.button('Submit'):
-        st.session_state[sb_token_st_key] = text
-        st.rerun()
-    st.stop()
-
-headers = {
-    'authority': 'www.switchboard.ai',
-    'accept': 'application/json, text/plain, */*',
-    'accept-language': 'en-US,en;q=0.9',
-    'authorization': f"Bearer {st.session_state[sb_token_st_key]}",
-    'Cookie': "_ga=GA1.1.519206553.1682785335; intercom-id-dtjeof09=93f2077c-f6e0-4bab-bca1-4c50d9fa7579; intercom-device-id-dtjeof09=1102363e-9c4c-4f9f-aad7-c3a8eec015f8; __stripe_mid=c6024ef6-7631-4951-8b45-b85ed94615a27b2ff9; csrf_token=51a95e43-064f-4565-8d12-d80d578c12d6; _ga_HT90M3YVTX=GS1.1.1699646652.72.0.1699646660.0.0.0; connect.sid=s%3AY0cBlpkdVIxDFP47O1btY06Pn7E7KYRi.TaFDlXrkwpPb4N%2B05IcNUK3u468SDUMEUyCUKQH6Ggg; __stripe_sid=d744f8f3-e41d-4102-ae71-7424dd7625b770311c; intercom-session-dtjeof09=aklsOFZkWTFzVjAyTG1XSkZUbFltZDFncTl2Uk1EUnV1ZXdJVVRLbXlaZG9OQm5hMk41OGpQUWFERE94bnE5Yy0teEdmZWx2My9vcVJadStNNmxEWjA1Zz09--687be086ff4bdc4564a44538e933e7b5200c7fb1; fs_lua=1.1699794531544; fs_uid=#15F16C#f9454a6a-f127-4d00-b217-518b0417d000:75b91d74-8904-4033-9e74-212d785e1c5f:1699794282030::4#bea14a1f#/1714321356; AWSALBTG=MAQValzSVTFyp6xnGMR6RyPTd2oXPocvhIj47+pdZSoFMZCoI8qd2Nz0rWuonq3vkYV6ARiUMFpj5AV+IY55/b/A6tdKCIwyASzl5k1cjoVRK/P3CkKv3+oSxQo4+1Rn2I5uxl4oZ5nY3/Ze1BEBD4mh5raWt6LLLY3JABxWHiiM; AWSALBTGCORS=MAQValzSVTFyp6xnGMR6RyPTd2oXPocvhIj47+pdZSoFMZCoI8qd2Nz0rWuonq3vkYV6ARiUMFpj5AV+IY55/b/A6tdKCIwyASzl5k1cjoVRK/P3CkKv3+oSxQo4+1Rn2I5uxl4oZ5nY3/Ze1BEBD4mh5raWt6LLLY3JABxWHiiM",
-}
+DEV_URL = 'https://psuf5gocxc.execute-api.us-east-1.amazonaws.com/api'
+DEV_API_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNTI1YzdmNC00ZTM5LTQ0N2ItODRlMy0xZWE5OWI3ZjA5MGYiLCJpYXQiOjE2OTUwOTQ0ODYsIm5iZiI6MTY5NTA5NDQ4NiwiZXhwIjoxNzI2NjMwNDg2fQ.G-e-NnDenhLs6HsM6ymLfQz_lTHTo8RX4oZB9I5hJI0' # admin@admin.com
+CANVAS_TABLE = boto3.resource('dynamodb').Table('switchboard-dev')
+THEMES_TABLE = boto3.resource('dynamodb').Table('themes-dev')
+STORAGE_TABLE = boto3.resource('dynamodb').Table('internal-design-editor')
 
 
-dev_url = 'https://psuf5gocxc.execute-api.us-east-1.amazonaws.com/api'
-dev_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNTI1YzdmNC00ZTM5LTQ0N2ItODRlMy0xZWE5OWI3ZjA5MGYiLCJpYXQiOjE2OTUwOTQ0ODYsIm5iZiI6MTY5NTA5NDQ4NiwiZXhwIjoxNzI2NjMwNDg2fQ.G-e-NnDenhLs6HsM6ymLfQz_lTHTo8RX4oZB9I5hJI0' # admin@admin.com
-canvas_table = boto3.resource('dynamodb').Table('switchboard-dev')
-themes_table = boto3.resource('dynamodb').Table('themes-dev')
+def put_storage(key, value):
+    STORAGE_TABLE.put_item(Item={'key': key, 'value': value})
+
+
+def get_storage(key):
+    return STORAGE_TABLE.get_item(Key={'key': key}).get('Item', {}).get('value')
+
+
+if not st.session_state.get(FILL_VALUES_ST_KEY):
+    st.session_state[FILL_VALUES_ST_KEY] = get_storage(FILL_VALUES_ST_KEY) or {
+        'background_image_url': list(background_urls.values())[0],
+        'logo_url': list(logo_urls.values())[0],
+        'background_color': "#ecc9bf",
+        'accent_color': "#cf3a72", # pink
+        'text_color': "#064e84", # blue
+        'text_content': text_content,
+    }
+    put_storage(FILL_VALUES_ST_KEY, st.session_state[FILL_VALUES_ST_KEY])
+
 
 @st.cache_data
 def get_db_templates():
-    scan_response = canvas_table.scan()
+    scan_response = CANVAS_TABLE.scan()
     templates = scan_response['Items']
     return {
         'components': {x['name']: get_db_template(x['components']) for x in templates},
@@ -54,26 +80,44 @@ def get_db_templates():
         'notes': {x['name']: x.get('notes') for x in templates},
     }
 
+
 @st.cache_data
 def get_themes():
-    scan_response = themes_table.scan()
+    scan_response = THEMES_TABLE.scan()
     themes = scan_response['Items']
     return {x['name']: x for x in themes}
 
 
 @st.cache_data(experimental_allow_widgets=True)
 def get_sb_templates():
+    # see if we have a token in persistent storage
+    token = get_storage(SB_TOKEN_ST_KEY)
+
+    if not token:
+        st.markdown(f"Get new token [from switchboard](https://www.switchboard.ai/s/canvas)")
+        text = st.text_input('token')
+        if st.button('Submit'):
+            put_storage(SB_TOKEN_ST_KEY, text)
+            st.rerun()
+        st.stop()
+
+    headers = {
+        'authority': 'www.switchboard.ai',
+        'accept': 'application/json, text/plain, */*',
+        'accept-language': 'en-US,en;q=0.9',
+        'authorization': f"Bearer {token}",
+        'Cookie': "_ga=GA1.1.519206553.1682785335; intercom-id-dtjeof09=93f2077c-f6e0-4bab-bca1-4c50d9fa7579; intercom-device-id-dtjeof09=1102363e-9c4c-4f9f-aad7-c3a8eec015f8; __stripe_mid=c6024ef6-7631-4951-8b45-b85ed94615a27b2ff9; csrf_token=51a95e43-064f-4565-8d12-d80d578c12d6; _ga_HT90M3YVTX=GS1.1.1699646652.72.0.1699646660.0.0.0; connect.sid=s%3AY0cBlpkdVIxDFP47O1btY06Pn7E7KYRi.TaFDlXrkwpPb4N%2B05IcNUK3u468SDUMEUyCUKQH6Ggg; __stripe_sid=d744f8f3-e41d-4102-ae71-7424dd7625b770311c; intercom-session-dtjeof09=aklsOFZkWTFzVjAyTG1XSkZUbFltZDFncTl2Uk1EUnV1ZXdJVVRLbXlaZG9OQm5hMk41OGpQUWFERE94bnE5Yy0teEdmZWx2My9vcVJadStNNmxEWjA1Zz09--687be086ff4bdc4564a44538e933e7b5200c7fb1; fs_lua=1.1699794531544; fs_uid=#15F16C#f9454a6a-f127-4d00-b217-518b0417d000:75b91d74-8904-4033-9e74-212d785e1c5f:1699794282030::4#bea14a1f#/1714321356; AWSALBTG=MAQValzSVTFyp6xnGMR6RyPTd2oXPocvhIj47+pdZSoFMZCoI8qd2Nz0rWuonq3vkYV6ARiUMFpj5AV+IY55/b/A6tdKCIwyASzl5k1cjoVRK/P3CkKv3+oSxQo4+1Rn2I5uxl4oZ5nY3/Ze1BEBD4mh5raWt6LLLY3JABxWHiiM; AWSALBTGCORS=MAQValzSVTFyp6xnGMR6RyPTd2oXPocvhIj47+pdZSoFMZCoI8qd2Nz0rWuonq3vkYV6ARiUMFpj5AV+IY55/b/A6tdKCIwyASzl5k1cjoVRK/P3CkKv3+oSxQo4+1Rn2I5uxl4oZ5nY3/Ze1BEBD4mh5raWt6LLLY3JABxWHiiM",
+    }
+
     response = requests.get('https://www.switchboard.ai/api/canvas/templates', headers=headers)
     success = response.status_code == 200
     if not success:
-        st.error(response.text + " " + str(headers['authorization']))
+        st.markdown(f"Get new token [from switchboard](https://www.switchboard.ai/s/canvas)")
+        text = st.text_input('token')
+        if st.button('Submit'):
+            put_storage(SB_TOKEN_ST_KEY, text)
+            st.rerun()
         st.stop()
-    # if not success:
-    #     st.markdown(f"Get new token [from switchboard](https://www.switchboard.ai/s/canvas)")
-    #     st.session_state[sb_token_st_key] = st.text_input('token')
-    #     if st.session_state[sb_token_st_key]:
-    #         refresh()
-    #     st.stop()
 
     templates = response.json()
 
@@ -227,8 +271,6 @@ def sb_template_to_db_components(sb_template: dict, text_meta: dict):
     return components
 
 
-s3_url_prefix = 'https://marky-image-posts.s3.amazonaws.com/'
-
 def upload_image_to_s3(image_url, object_name, bucket_name='marky-image-posts', prefix='thumbnails'):
     object_name = f'{prefix}/{object_name}'
     # Download the image from the URL
@@ -244,32 +286,23 @@ def upload_image_to_s3(image_url, object_name, bucket_name='marky-image-posts', 
     # Upload the image to S3
     s3_client = boto3.client('s3')
     s3_client.upload_fileobj(buffer, bucket_name, object_name)
-    return s3_url_prefix + object_name
+    return S3_URL_PREFIX + object_name
 
 
 def list_s3_objects(bucket_name='marky-image-posts', prefix='thumbnails'):
     s3_client = boto3.client('s3')
     response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
-    return {x['Key'].removeprefix(prefix + '/').split('.')[0]: (s3_url_prefix + x['Key']) for x in response.get('Contents', [])}
+    return {x['Key'].removeprefix(prefix + '/').split('.')[0]: (S3_URL_PREFIX + x['Key']) for x in response.get('Contents', [])}
 
 
-def get_filler_text(key, meta):
-    if meta['optional']:
-        return ''
-    if key == 'title':
-        s = "I wish I knew this when I started! It would have saved me a lot of time and money."
-        return s[:meta['max_characters']] if len(s) > meta['max_characters'] else s + ipsem[:meta['max_characters'] - len(s)]
-    if key in ['content', 'content1', 'content2']:
-        s = "Start with the minimum viable product. Don't try to build the perfect product from the start. If you do, you'll waste a lot of time and money."
-        return s[:meta['max_characters']] if len(s) > meta['max_characters'] else s + ipsem[:meta['max_characters'] - len(s)]
-    if key == 'cta':
-        s = "Get started today! It's free to sign up and you can cancel anytime."
-        return s[:meta['max_characters']] if len(s) > meta['max_characters'] else s + ipsem[:meta['max_characters'] - len(s)]
-    return ipsem[:meta['max_characters']]
+def get_filler_text(value, max_characters):
+    value = value[:max_characters]
+    if len(value) < max_characters:
+        value += ipsem[:max_characters - len(value)]
+    return value
 
 
-# Function to display row details and handle the demo button functionality
-def display_template_components(template_name: str, sb_template: dict, db_template: dict | None):
+def display_text_containers(template_name: str, sb_template: dict, db_template: dict | None):
     st.subheader('Text Containers')
     new_meta = {}
     old_meta = db_template['text_meta'] if db_template else {}
@@ -305,117 +338,43 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
             'optional': optional,
         }
 
+    if old_meta != new_meta:
+        reload_image(template_name, sb_template, new_meta)
 
-    # set defaults
-    fill_values_st_key = f'fill_values_{template_name}'
-    fill_values = st.session_state.get(fill_values_st_key)
-    if not fill_values:
-        fill_values = st.session_state[fill_values_st_key] = {
-            'background_image_url': "https://images.unsplash.com/photo-1694459471238-6e55eb657848?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwyfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
-            'logo_url': 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg',
-            'background_color': "#ecc9bf",
-            'accent_color': "#cf3a72", # pink
-            'text_color': "#064e84", # blue
-            'text_content': {key: get_filler_text(key, meta) for key, meta in new_meta.items()},
-        }
 
-    values_changed = False
-    new_fill_values = {}
-    # Configuration for values
-    if st.checkbox('Change Fill Values', key=f'adjust-values-{template_name}'):
-
-        selectors = len([sb_template[key]
-                        for key in ('has_background_image', 'has_background_shape', 'has_logo', 'has_background_color', 'has_accent_color')
-                        if sb_template[key]])
-        if any(field_meta['text_color_type'] not in ('ACCENT', 'DONT_CHANGE') for field_meta in new_meta.values()):
-            selectors += 1
-        cols = st.columns(selectors) if selectors > 0 else []
-
-        col = 0
-        if sb_template['has_background_image']:
-            with cols[0]:
-                # Mapping choice to URL
-                background_urls = {
-                    'Image 1': "https://images.unsplash.com/photo-1694459471238-6e55eb657848?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwyfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
-                    'Image 2': "https://images.unsplash.com/photo-1695331453337-d5f95078f78e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwxfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
-                    'Image 3': "https://images.unsplash.com/photo-1694472655814-71e6c5a7ade8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwzfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
-                }
-                old_index = list(background_urls.values()).index(fill_values['background_image_url'])
-                background_choice = st.radio('Select a background image:',
-                                            ('Image 1', 'Image 2', 'Image 3'),
-                                            index=old_index,
-                                            key=f'background_choice-{template_name}')
-                assert background_choice is not None
-                new_fill_values['background_image_url'] = background_urls[background_choice]
-                st.image(new_fill_values['background_image_url'], width=300)
-            col += 1
-
-        if sb_template['has_logo']:
-            with cols[col]:
-                logo_urls = {
-                    'Logo 1': 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg',
-                    'Logo 2': 'https://marky-image-posts.s3.amazonaws.com/380106565_1398612124371856_5370535347247435473_n.png',
-                    'Logo 3': 'https://marky-image-posts.s3.amazonaws.com/pearlite%20emporium%20logo.jpg',
-                }
-                old_index = list(logo_urls.values()).index(fill_values['logo_url'])
-                logo_choice = st.radio('Select a logo:', ('Logo 1', 'Logo 2', 'Logo 3'), index=old_index, key=f'logo_choice-{template_name}')
-                assert logo_choice is not None
-                new_fill_values['logo_url'] = logo_urls[logo_choice]
-                st.image(new_fill_values['logo_url'], width=100)
-            col += 1
-
-        if sb_template['has_accent_color']:
-            with cols[col]:
-                new_fill_values['accent_color'] = st.color_picker('Accent Color', value=fill_values['accent_color'], key=f'accent_color-{template_name}')
-            col += 1
-
-        if sb_template['has_background_color']:
-            with cols[col]:
-                new_fill_values['background_color'] = st.color_picker('Background Color', value=fill_values['background_color'], key=f'background_color-{template_name}')
-            col += 1
-
-        if any(field_meta['text_color_type'] not in ('ACCENT', 'DONT_CHANGE') for field_meta in new_meta.values()):
-            with cols[col]:
-                new_fill_values['text_color'] = st.color_picker('Text Color', value=fill_values['text_color'], key=f'text_color-{template_name}')
-            col += 1
-
-        new_fill_values['text_content'] = {key: st.text_area(key, value=value, key=f'{key}-{template_name}')
-                                           for key, value in fill_values['text_content'].items()}
-
-        values_changed = any(fill_values[key] != new_fill_values[key] for key in new_fill_values)
-        st.session_state[fill_values_st_key] = new_fill_values
-
-    if st.button("Update DB & Demo", key=f'demo-{template_name}') or (old_meta != new_meta) or values_changed:
-        canvas_table.update_item(
+def reload_image(template_name, sb_template, meta):
+        CANVAS_TABLE.update_item(
             Key={'name': template_name},
             UpdateExpression='SET components = :components',
-            ExpressionAttributeValues={':components': sb_template_to_db_components(sb_template, new_meta)},
+            ExpressionAttributeValues={':components': sb_template_to_db_components(sb_template, meta)},
         )
         st.session_state['db_data']['components'][template_name] = \
-            get_db_template(sb_template_to_db_components(sb_template, new_meta))
+            get_db_template(sb_template_to_db_components(sb_template, meta))
         st.toast(f"Requesting new image for {template_name}...")
         st.text('Loading...')
-        image_url = fill_canvas(template_name, st.session_state[fill_values_st_key])
+        image_url = fill_canvas(template_name, st.session_state[FILL_VALUES_ST_KEY], meta)
         if image_url:
             st.text('Done')
-            # clickable_image(image_url, switchboard_template_url_prefix + template_id, image_size=300)
             upload_image_to_s3(image_url, template_name + '.png')
-            st.session_state['db_data']['components'][template_name]['text_meta'] = new_meta
+            st.session_state['db_data']['components'][template_name]['text_meta'] = meta
             st.session_state['sb_data']['thumbnails'][template_name] = image_url
             st.rerun()
         else:
             st.error("Error filling canvas!")
 
 
-def fill_canvas(template_name, fill_values):
+def fill_canvas(template_name, fill_values, meta):
+    text_content = {field_name: get_filler_text(fill_values['text_content'][field_name], field_meta['max_characters'])
+                    for field_name, field_meta in meta.items()}
     payload = {
         'template_name': template_name,
-        **fill_values
+        **fill_values,
+        'text_content': text_content,
     }
 
-    response = requests.post(dev_url + '/v1/posts/fill-canvas',
+    response = requests.post(DEV_URL + '/v1/posts/fill-canvas',
                              json=payload,
-                             headers={'Authorization': f'Bearer {dev_token}'})
+                             headers={'Authorization': f'Bearer {DEV_API_TOKEN}'})
     if not response.ok:
         st.error(response.text)
         return None
@@ -429,11 +388,15 @@ def refresh():
     st.rerun()
 
 
-def display_notes(template_name):
+def display_notes(template_name, sb_template, text_meta):
     # Unique keys for session state
     edit_key = f'edit-{template_name}'
     notes = db_data['notes'].get(template_name, '')
-    col1, col2 = st.columns([1, 9])
+    col0, col1, col2 = st.columns([1, 2, 9])
+
+    with col0:
+        if st.button('🔄', key=f'reload-{template_name}'):
+            reload_image(template_name, sb_template, text_meta)
 
     with col1:
         edit_button_label = 'Edit Notes' if notes else 'Add Notes'
@@ -447,7 +410,7 @@ def display_notes(template_name):
             edited_notes = st.text_area('Notes', value=notes, key=f'notes-{template_name}')
             if st.button('Save', key=f'save-{template_name}'):
                 # Perform the update operation
-                canvas_table.update_item(
+                CANVAS_TABLE.update_item(
                     Key={'name': template_name},
                     UpdateExpression='SET notes = :notes',
                     ExpressionAttributeValues={':notes': edited_notes},
@@ -464,7 +427,7 @@ def display_notes(template_name):
 
 
 def change_approval_status(template_name, approval_status):
-    canvas_table.update_item(
+    CANVAS_TABLE.update_item(
         Key={'name': template_name},
         UpdateExpression='SET approved = :approved',
         ExpressionAttributeValues={':approved': approval_status},
@@ -561,35 +524,64 @@ with st.sidebar:
     
     image_size = st.slider('Image Size', min_value=100, max_value=300, value=150, step=50)
 
-    with st.expander("Edit Presets"):
-        st.text("Logo")
+    # Configuration for values
+    with st.expander('Change Fill Values'):
+        fill_values = st.session_state[FILL_VALUES_ST_KEY]
+        new_fill_values = {}
+        old_index = list(background_urls.values()).index(fill_values['background_image_url'])
+        background_choice = st.radio('Select a background image:',
+                                    ('Image 1', 'Image 2', 'Image 3'),
+                                    index=old_index,
+                                    key=f'background_choice-{template_name}')
+        assert background_choice is not None
+        new_fill_values['background_image_url'] = background_urls[background_choice]
+        st.image(new_fill_values['background_image_url'], width=300)
+
+        old_index = list(logo_urls.values()).index(fill_values['logo_url']) if 'logo_url' in fill_values else 0
+        logo_choice = st.radio('Select a logo:', ('Logo 1', 'Logo 2', 'Logo 3'), index=old_index, key=f'logo_choice-{template_name}')
+        assert logo_choice is not None
+        new_fill_values['logo_url'] = logo_urls[logo_choice]
+        st.image(new_fill_values['logo_url'], width=100)
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            new_fill_values['background_color'] = st.color_picker('Background', value=fill_values['background_color'], key=f'background_color-{template_name}')
+        with col2:
+            new_fill_values['accent_color'] = st.color_picker('Accent', value=fill_values['accent_color'], key=f'accent_color-{template_name}')
+        with col3:
+            new_fill_values['text_color'] = st.color_picker('Text', value=fill_values['text_color'], key=f'text_color-{template_name}')
+
+        new_fill_values['text_content'] = {key: st.text_area(key, value=value, key=key)
+                                           for key, value in fill_values['text_content'].items()}
+
+        values_changed = new_fill_values != fill_values
+        if values_changed:
+            put_storage(FILL_VALUES_ST_KEY, new_fill_values)
+            st.session_state[FILL_VALUES_ST_KEY] = new_fill_values
 
     if theme:
         if st.button(f"Mark '{theme}' {'uncolored' if color_editable[theme] else 'colored'}", key=f"mark-{theme}"):
-            themes_table.update_item(
+            THEMES_TABLE.update_item(
                 Key={'name': theme},
                 UpdateExpression='SET color_editable = :colored',
                 ExpressionAttributeValues={':colored': not color_editable[theme]},
             )
             refresh()
 
-    if st.button('Pull Data'):
+    if st.button("Pull Switchboard Changes"):
         refresh()
+    st.info("⬆️ Run whenever you add a component or change it's name")
 
     if st.button('Push to Prod'):
         prod_themes_table = boto3.resource('dynamodb').Table('themes-prod')
         prod_canvas_table = boto3.resource('dynamodb').Table('switchboard-prod')
-        for item in themes_table.scan()['Items']:
+        for item in THEMES_TABLE.scan()['Items']:
             prod_themes_table.put_item(Item=item)
         st.toast("Pushed themes to prod")
-        for item in canvas_table.scan()['Items']:
+        for item in CANVAS_TABLE.scan()['Items']:
             prod_canvas_table.put_item(Item=item)
         st.toast("Pushed templates to prod")
 
-# if (~df.matches).any():
-#     st.error('Mismatched Templates! Please Fix by deleting from DB or updating in SB then syncing to db.')
-# if theme and color_editable[theme] and sb_data['components'].get(theme) != db_data['components'].get(theme):
-#     st.error('Theme is not colored')
 
 load = 50
 if len(df) == 0:
@@ -624,13 +616,13 @@ for row in df.head(load).itertuples():
 
 
     if row.in_sb:
-        display_notes(row.name)
+        display_notes(row.name, row.sb, db_data['components'].get(row.name, {}).get('text_meta'))
         with st.expander(row.name):
-            display_template_components(row.name, row.sb, row.db)
+            display_text_containers(row.name, row.sb, row.db)
     if row.in_db and not row.in_sb:
         st.text(row.name)
         if st.button('Delete from DB', key=f'{row.name}_delete'):
-            canvas_table.delete_item(Key={'name': row.name})
+            CANVAS_TABLE.delete_item(Key={'name': row.name})
             df.drop(row.name, inplace=True)
             st.cache_data.clear()
             st.rerun()
