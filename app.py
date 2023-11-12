@@ -556,6 +556,9 @@ with st.sidebar:
     
     image_size = st.slider('Image Size', min_value=100, max_value=300, value=150, step=50)
 
+    with st.expander("Edit Presets"):
+        st.text("Logo")
+
     if theme:
         if st.button(f"Mark '{theme}' {'uncolored' if color_editable[theme] else 'colored'}", key=f"mark-{theme}"):
             themes_table.update_item(
