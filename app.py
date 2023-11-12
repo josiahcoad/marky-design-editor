@@ -637,7 +637,8 @@ for row in df.head(load).itertuples():
         st.text(row.name)
         if st.button('Delete from DB', key=f'{row.name}_delete'):
             CANVAS_TABLE.delete_item(Key={'name': row.name})
-            del st.session_state['db_data']['components'][template_name]
+            if template_name in st.session_state['db_data']['components']:
+                del st.session_state['db_data']['components'][template_name]
             st.rerun()
 
 if load < len(df):
