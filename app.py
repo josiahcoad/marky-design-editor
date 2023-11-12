@@ -26,6 +26,7 @@ if not st.session_state.get(sb_token_st_key):
     text = st.text_input('token')
     if st.button('Submit'):
         st.session_state[sb_token_st_key] = text
+        st.rerun()
     st.stop()
 
 headers = {
@@ -310,7 +311,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
     fill_values = st.session_state.get(fill_values_st_key)
     if not fill_values:
         fill_values = st.session_state[fill_values_st_key] = {
-            'background_url': "https://images.unsplash.com/photo-1694459471238-6e55eb657848?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwyfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
+            'background_image_url': "https://images.unsplash.com/photo-1694459471238-6e55eb657848?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwyfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
             'logo_url': 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg',
             'background_color': "#ecc9bf",
             'accent_color': "#cf3a72", # pink
@@ -339,14 +340,14 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
                     'Image 2': "https://images.unsplash.com/photo-1695331453337-d5f95078f78e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwxfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
                     'Image 3': "https://images.unsplash.com/photo-1694472655814-71e6c5a7ade8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwzfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
                 }
-                old_index = list(background_urls.values()).index(fill_values['background_url'])
+                old_index = list(background_urls.values()).index(fill_values['background_image_url'])
                 background_choice = st.radio('Select a background image:',
                                             ('Image 1', 'Image 2', 'Image 3'),
                                             index=old_index,
                                             key=f'background_choice-{template_name}')
                 assert background_choice is not None
-                new_fill_values['background_url'] = background_urls[background_choice]
-                st.image(new_fill_values['background_url'], width=300)
+                new_fill_values['background_image_url'] = background_urls[background_choice]
+                st.image(new_fill_values['background_image_url'], width=300)
             col += 1
 
         if sb_template['has_logo']:
