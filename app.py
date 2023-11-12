@@ -421,6 +421,8 @@ def fill_canvas(template_name, fill_values):
 
 
 def refresh():
+    st.session_state['sb_data'] = None
+    st.session_state['db_data'] = None
     st.cache_data.clear()
     st.rerun()
 
