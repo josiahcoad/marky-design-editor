@@ -48,7 +48,7 @@ def get_db_templates():
     scan_response = canvas_table.scan()
     templates = scan_response['Items']
     return {
-        'components': {x['name']: db_template(x['components']) for x in templates},
+        'components': {x['name']: get_db_template(x['components']) for x in templates},
         'themes': {x['name']: x['theme'] for x in templates},
         'approved': {x['name']: x.get('approved') for x in templates},
         'notes': {x['name']: x.get('notes') for x in templates},
@@ -85,7 +85,7 @@ def get_sb_templates():
     }
 
 
-def db_template(components):
+def get_db_template(components):
     def has_image_named(name):
         return any((x['type'] == 'IMAGE' and x['key'] == name) for x in components)
 
@@ -392,7 +392,7 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
             ExpressionAttributeValues={':components': sb_template_to_db_components(sb_template, new_meta)},
         )
         st.session_state['db_data']['components'][template_name] = \
-            db_template(sb_template_to_db_components(sb_template, new_meta))
+            get_db_template(sb_template_to_db_components(sb_template, new_meta))
         st.toast(f"Requesting new image for {template_name}...")
         st.text('Loading...')
         image_url = fill_canvas(template_name, st.session_state[fill_values_st_key])
