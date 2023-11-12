@@ -508,9 +508,6 @@ df['name'] = df.index
 
 # add filters in a  sidebar
 with st.sidebar:
-    template_name = st.text_input('Search Template Name')
-    if template_name:
-        df = df[df.name.str.contains(template_name, case=False)]
     theme_names = list(df.theme.unique()) + [None]
     color_editable = {name: get_themes().get(name, {}).get('color_editable', False) for name in theme_names}
     theme = st.selectbox('Theme',
@@ -520,6 +517,9 @@ with st.sidebar:
     if theme:
         df = df[df.theme == theme]
     with st.expander('More Filters'):
+        template_name = st.text_input('Search Template Name')
+        if template_name:
+            df = df[df.name.str.contains(template_name, case=False)]
         filter_matched = st.selectbox('Matching', options=[None, True, False], index=0)
         if filter_matched is not None:
             df = df[df.matches == filter_matched]
