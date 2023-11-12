@@ -14,21 +14,6 @@ os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 st.set_page_config(layout='wide')
 
 
-cookies = {
-    '_ga': 'GA1.1.519206553.1682785335',
-    'intercom-id-dtjeof09': '93f2077c-f6e0-4bab-bca1-4c50d9fa7579',
-    'intercom-device-id-dtjeof09': '1102363e-9c4c-4f9f-aad7-c3a8eec015f8',
-    '__stripe_mid': 'c6024ef6-7631-4951-8b45-b85ed94615a27b2ff9',
-    'csrf_token': '51a95e43-064f-4565-8d12-d80d578c12d6',
-    '_ga_HT90M3YVTX': 'GS1.1.1699403411.66.0.1699403413.0.0.0',
-    '__stripe_sid': 'ef4d18b8-0ad4-4c9e-a4f3-ac740e03b36cef248a',
-    'connect.sid': 's%3A-GWlPUhxM3oDf488VZ6lPN_8ZhEzQ-Yn.oA7jF18HZXB7ABfXwgJ3KUsDkG6n5PiI6LEKImG%2Fh5w',
-    'intercom-session-dtjeof09': 'QWJLSVBRcHlubnRpWDlQemFRSEFWWlhCY3Zxa2prOEcxVjBBMnpUSjhFZWMrai9JNkNiUGcrbUFSODNRb1RPcS0tMnJsYVdwS3ExZW04SXkyMkMrQWNzQT09--2f1a8482b4daf4d53980db62cee2003fa8f1b315',
-    'fs_lua': '1.1699407654260',
-    'fs_uid': '#15F16C#f9454a6a-f127-4d00-b217-518b0417d000:e4076e56-059c-49f5-bb8a-096420be7d9f:1699405261770::3#bea14a1f#/1714321356',
-    'AWSALBTG': 'jUOk9f30U1/VdwAcY3px+W1WXimHC1ETq2zyedMxmBeea9AuxMoYUXM5GKMYJiXQmJYq+bAXoEHWeruoa8t/vhTBj4O3giP7W2BgBJlQDcSIzsIN2vZz0J/MVeX8mC8oJjQfg6sUnk3nf+zSwzLchMQlWbJv9+mmfuBTk87IQwY3',
-    'AWSALBTGCORS': 'jUOk9f30U1/VdwAcY3px+W1WXimHC1ETq2zyedMxmBeea9AuxMoYUXM5GKMYJiXQmJYq+bAXoEHWeruoa8t/vhTBj4O3giP7W2BgBJlQDcSIzsIN2vZz0J/MVeX8mC8oJjQfg6sUnk3nf+zSwzLchMQlWbJv9+mmfuBTk87IQwY3',
-}
 
 ipsem = "This Python package runs a Markov chain algorithm over the surviving works of the Roman historian Tacitus to generate naturalistic-looking pseudo-Latin gibberish. Useful when you need to generate dummy text as a placeholder in templates, etc. Brigantes femina duce exurere coloniam, expugnare castra, ac nisi felicitas in tali"
 
@@ -38,7 +23,9 @@ sb_token_st_key = 'sb_token'
 
 if not st.session_state.get(sb_token_st_key):
     st.markdown(f"Get new token [from switchboard](https://www.switchboard.ai/s/canvas)")
-    st.session_state[sb_token_st_key] = st.text_input('token')
+    text = st.text_input('token')
+    if st.button('Submit'):
+        st.session_state[sb_token_st_key] = text
     st.stop()
 
 headers = {
@@ -46,6 +33,7 @@ headers = {
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'en-US,en;q=0.9',
     'authorization': f"Bearer {st.session_state[sb_token_st_key]}",
+    'Cookie': "_ga=GA1.1.519206553.1682785335; intercom-id-dtjeof09=93f2077c-f6e0-4bab-bca1-4c50d9fa7579; intercom-device-id-dtjeof09=1102363e-9c4c-4f9f-aad7-c3a8eec015f8; __stripe_mid=c6024ef6-7631-4951-8b45-b85ed94615a27b2ff9; csrf_token=51a95e43-064f-4565-8d12-d80d578c12d6; _ga_HT90M3YVTX=GS1.1.1699646652.72.0.1699646660.0.0.0; connect.sid=s%3AY0cBlpkdVIxDFP47O1btY06Pn7E7KYRi.TaFDlXrkwpPb4N%2B05IcNUK3u468SDUMEUyCUKQH6Ggg; __stripe_sid=d744f8f3-e41d-4102-ae71-7424dd7625b770311c; intercom-session-dtjeof09=aklsOFZkWTFzVjAyTG1XSkZUbFltZDFncTl2Uk1EUnV1ZXdJVVRLbXlaZG9OQm5hMk41OGpQUWFERE94bnE5Yy0teEdmZWx2My9vcVJadStNNmxEWjA1Zz09--687be086ff4bdc4564a44538e933e7b5200c7fb1; fs_lua=1.1699794531544; fs_uid=#15F16C#f9454a6a-f127-4d00-b217-518b0417d000:75b91d74-8904-4033-9e74-212d785e1c5f:1699794282030::4#bea14a1f#/1714321356; AWSALBTG=MAQValzSVTFyp6xnGMR6RyPTd2oXPocvhIj47+pdZSoFMZCoI8qd2Nz0rWuonq3vkYV6ARiUMFpj5AV+IY55/b/A6tdKCIwyASzl5k1cjoVRK/P3CkKv3+oSxQo4+1Rn2I5uxl4oZ5nY3/Ze1BEBD4mh5raWt6LLLY3JABxWHiiM; AWSALBTGCORS=MAQValzSVTFyp6xnGMR6RyPTd2oXPocvhIj47+pdZSoFMZCoI8qd2Nz0rWuonq3vkYV6ARiUMFpj5AV+IY55/b/A6tdKCIwyASzl5k1cjoVRK/P3CkKv3+oSxQo4+1Rn2I5uxl4oZ5nY3/Ze1BEBD4mh5raWt6LLLY3JABxWHiiM",
 }
 
 
@@ -74,10 +62,10 @@ def get_themes():
 
 @st.cache_data(experimental_allow_widgets=True)
 def get_sb_templates():
-    response = requests.get('https://www.switchboard.ai/api/canvas/templates', cookies=cookies, headers=headers)
+    response = requests.get('https://www.switchboard.ai/api/canvas/templates', headers=headers)
     success = response.status_code == 200
     if not success:
-        st.error(str(headers))
+        st.error(response.text + " " + str(headers['authorization']))
         st.stop()
     # if not success:
     #     st.markdown(f"Get new token [from switchboard](https://www.switchboard.ai/s/canvas)")
@@ -371,8 +359,8 @@ def display_template_components(template_name: str, sb_template: dict, db_templa
                 old_index = list(logo_urls.values()).index(fill_values['logo_url'])
                 logo_choice = st.radio('Select a logo:', ('Logo 1', 'Logo 2', 'Logo 3'), index=old_index, key=f'logo_choice-{template_name}')
                 assert logo_choice is not None
-                new_fill_values['logo_choice'] = logo_urls[logo_choice]
-                st.image(new_fill_values['logo_choice'], width=100)
+                new_fill_values['logo_url'] = logo_urls[logo_choice]
+                st.image(new_fill_values['logo_url'], width=100)
             col += 1
 
         if sb_template['has_accent_color']:
