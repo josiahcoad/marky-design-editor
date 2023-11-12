@@ -18,6 +18,8 @@ logo_urls = {
     'Logo 1': 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg',
     'Logo 2': 'https://marky-image-posts.s3.amazonaws.com/380106565_1398612124371856_5370535347247435473_n.png',
     'Logo 3': 'https://marky-image-posts.s3.amazonaws.com/pearlite%20emporium%20logo.jpg',
+    'Logo 4': 'https://marky-image-posts.s3.amazonaws.com/OAO_OFFICIAL_LOGO_v2.png',
+    'Logo 5': 'https://marky-image-posts.s3.amazonaws.com/wowbrow%20logo.png',
 }
 
 background_urls = {
@@ -159,6 +161,7 @@ def extract_meta(db_text_component):
 def clickable_image(image_url, target_url, image_size=100):
     markdown = f'<a href="{target_url}" target="_blank"><img src="{image_url}" width="{image_size}" height="{image_size}"></a>'
     st.markdown(markdown, unsafe_allow_html=True)
+    st.image(image_url, width=image_size)
 
 
 def switchboard_template(components):
@@ -295,7 +298,11 @@ def list_s3_objects(bucket_name='marky-image-posts', prefix='thumbnails'):
     return {x['Key'].removeprefix(prefix + '/').split('.')[0]: (S3_URL_PREFIX + x['Key']) for x in response.get('Contents', [])}
 
 
-def get_filler_text(value, max_characters):
+def get_filler_text(value, meta):
+    max_characters = meta['max_characters']
+    optional = meta['optional']
+    if optional:
+        return "optional " * (max_characters//len("optional "))
     value = value[:max_characters]
     if len(value) < max_characters:
         value += ipsem[:max_characters - len(value)]
@@ -367,7 +374,7 @@ def fill_canvas_and_update_thumbnail(template_name, meta):
 
 
 def fill_canvas(template_name, fill_values, meta):
-    text_content = {field_name: get_filler_text(fill_values['text_content'][field_name], field_meta['max_characters'])
+    text_content = {field_name: get_filler_text(fill_values['text_content'][field_name], field_meta)
                     for field_name, field_meta in meta.items()}
     payload = {
         'template_name': template_name,
@@ -395,19 +402,25 @@ def display_action_bar(template_name, sb_template, text_meta):
     # Unique keys for session state
     edit_key = f'edit-{template_name}'
     notes = db_data['notes'].get(template_name, '')
-    col0, col1, col2 = st.columns([1, 2, 9])
-
-    with col0:
-        if st.button('🔄', key=f'reload-{template_name}'):
-            reload_image(template_name, sb_template, text_meta)
+    col1, col2, col3, col4 = st.columns([1, 1, 2, 8])
 
     with col1:
+        st.markdown(
+            f"[Open]({switchboard_template_url_prefix + sb_data['template_id'][template_name]})",
+            unsafe_allow_html=True,
+        )
+
+    with col2:
+        if st.button('🔄', key=f'optn-{template_name}'):
+            reload_image(template_name, sb_template, text_meta)
+
+    with col3:
         edit_button_label = 'Edit Notes' if notes else 'Add Notes'
         if st.button(edit_button_label, key=f'edit-notes-{template_name}'):
             # Toggle the edit state
             st.session_state[edit_key] = not st.session_state.get(edit_key, False)
 
-    with col2:
+    with col4:
         # If in edit mode, display the text area
         if st.session_state.get(edit_key, False):
             edited_notes = st.text_area('Notes', value=notes, key=f'notes-{template_name}')
@@ -594,9 +607,7 @@ for row in df.head(load).itertuples():
     with cols[0]:
         if row.thumbnail:
             template_id = st.session_state['sb_data']['template_id'][row.name]
-            clickable_image(st.session_state['sb_data']['thumbnails'][row.name],
-                            switchboard_template_url_prefix + template_id,
-                            image_size=image_size)
+            st.image(st.session_state['sb_data']['thumbnails'][row.name], width=image_size)
     with cols[1]:
         approval_status = st.checkbox('Approved', value=row.approved, key=f'approval_status-{row.name}')
         if bool(approval_status) != bool(row.approved): # ie status changed
