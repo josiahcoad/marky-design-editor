@@ -602,7 +602,7 @@ with st.sidebar:
 load = 50
 if len(df) == 0:
     st.write('No templates found matching filters')
-for row in df.head(load).itertuples():
+for row in df.head(load).sort_index().itertuples():
     cols = st.columns(6)
     with cols[0]:
         if row.thumbnail:
