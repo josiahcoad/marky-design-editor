@@ -300,9 +300,6 @@ def list_s3_objects(bucket_name='marky-image-posts', prefix='thumbnails'):
 
 def get_filler_text(value, meta):
     max_characters = meta['max_characters']
-    optional = meta['optional']
-    if optional:
-        return "optional " * (max_characters//len("optional "))
     value = value[:max_characters]
     if len(value) < max_characters:
         value += ipsem[:max_characters - len(value)]
