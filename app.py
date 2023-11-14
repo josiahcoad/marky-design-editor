@@ -59,6 +59,19 @@ def get_storage(key):
     return STORAGE_TABLE.get_item(Key={'key': key}).get('Item', {}).get('value')
 
 
+def put_all(table, items):
+    with table.batch_writer() as batch:
+        for item in items:
+            batch.put_item(Item=item)
+
+
+def delete_all(table, key_name):
+    items = table.scan()['Items']
+    with table.batch_writer() as batch:
+        for item in items:
+            batch.delete_item(Key={key_name: item[key_name]})
+
+
 if not st.session_state.get(FILL_VALUES_ST_KEY):
     st.session_state[FILL_VALUES_ST_KEY] = get_storage(FILL_VALUES_ST_KEY) or {
         'background_image_url': list(background_urls.values())[0],
@@ -132,19 +145,36 @@ def get_sb_templates():
 
 
 def get_db_template(components):
-    def has_image_named(name):
-        return any((x['type'] == 'IMAGE' and x['key'] == name) for x in components)
+    def is_image_named(component, name, prefix=False):
+        return component['type'] == 'IMAGE' and (component['key'] == name if not prefix else component['key'].startswith(name))
 
-    def has_shape_named(name):
-        return any((x['type'] == 'SHAPE' and x['key'] == name) for x in components)
+    def is_shape_named(component, name, prefix=False):
+        return component['type'] == 'SHAPE' and (component['key'] == name if not prefix else component['key'].startswith(name))
+
+    def has_image_named(name):
+        return any(is_image_named(x, name) for x in components)
+
+    def is_background_colored(component):
+        return (is_shape_named(component, 'object1')
+                or is_image_named(component, 'colored-layer-background')
+                or is_image_named(component, 'bc-', prefix=True) or is_shape_named(component, 'bc-', prefix=True))
+
+    def is_accent_colored(component):
+        return (is_image_named(component, 'colored-layer')
+                or is_image_named(component, 'ac-', prefix=True) or is_shape_named(component, 'ac-', prefix=True))
+
+    def get_background_layer():
+        return [x for x in components if is_background_colored(x)]
+
+    def get_accent_layer():
+        return [x for x in components if is_accent_colored(x)]
 
     return {
         'has_background_image': has_image_named('image1'),
-        'has_background_shape': has_shape_named('object1'),
+        'background_color_layer': get_background_layer(),
+        'accent_color_layer': get_accent_layer(),
         'has_logo': has_image_named('logo'),
         'has_logo_bg': has_image_named('logo-bg'),
-        'has_background_color': has_image_named('colored-layer-background'),
-        'has_accent_color': has_image_named('colored-layer'),
         'text_meta': {x['key']: extract_meta(x) for x in components if x['type'] == 'TEXT'},
     }
 
@@ -168,26 +198,43 @@ def switchboard_template(components):
     del components['template']
     components = components.values()
 
-    def has_image_named(name, require_svg=False):
+    def is_image_named(component, name, require_svg=False, prefix=False):
         if require_svg:
-            return any((x['type'] == 'image'
-                        and x['name'] == name
-                        and x['imageSvgFill']
-                        and x['url']['file']['filename'].endswith('svg'))
-                        for x in components)
+            return (component['type'] == 'image'
+                    and (component['name'] == name or (prefix and component['name'].startswith(name)))
+                    and component['imageSvgFill']
+                    and component['url']['file']['filename'].endswith('svg'))
 
-        return any((x['type'] == 'image' and x['name'] == name) for x in components)
+        return component['type'] == 'image' and component['name'] == name
 
-    def has_shape_named(name):
-        return any((x['type'] == 'rectangle' and x['name'] == name) for x in components)
+    def is_shape_named(component, name, prefix=False):
+        return component['type'] == 'rectangle' and (component['name'] == name or (prefix and component['name'].startswith(name)))
+
+    def has_image_named(name):
+        return any(is_image_named(x, name) for x in components)
+
+    def is_background_colored(component):
+        return (is_shape_named(component, 'object1')
+                or is_image_named(component, 'colored-layer-background', require_svg=True)
+                or is_image_named(component, 'bc-', require_svg=True, prefix=True))
+
+    def is_accent_colored(component):
+        return (is_shape_named(component, 'object1')
+                or is_image_named(component, 'colored-layer-background', require_svg=True)
+                or is_image_named(component, 'bc-', require_svg=True, prefix=True))
+
+    def get_background_layer():
+        return [x for x in components if is_background_colored(x)]
+    
+    def get_accent_layer():
+        return [x for x in components if is_accent_colored(x)]
 
     return {
         'has_background_image': has_image_named('image1'),
-        'has_background_shape': has_shape_named('object1'),
         'has_logo': has_image_named('logo'),
         'has_logo_bg': has_image_named('logo-bg'),
-        'has_background_color': has_image_named('colored-layer-background', require_svg=True),
-        'has_accent_color': has_image_named('colored-layer', require_svg=True),
+        'background_color_layer': get_background_layer(),
+        'accent_color_layer': get_accent_layer(),
         'text_keys': sorted([x['name'] for x in components if x['type'] == 'text']),
     }
 
@@ -243,31 +290,19 @@ def sb_template_to_db_components(sb_template: dict, text_meta: dict):
     def background_image_component():
         return image_component('image1')
     
-    def background_shape_component():
-        return shape_component('object1')
-    
     def logo_component():
         return image_component('logo')
     
     def logo_bg_component():
         return image_component('logo-bg')
-    
-    def background_color_component():
-        return image_component('colored-layer-background')
-
-    def accent_color_component():
-        return image_component('colored-layer')
 
     def text_components(text_meta: Dict[str, dict]):
         return [text_component(key, value) for key, value in text_meta.items()]
 
     inserts = {
         'has_background_image': background_image_component,
-        'has_background_shape': background_shape_component,
         'has_logo': logo_component,
         'has_logo_bg': logo_bg_component,
-        'has_background_color': background_color_component,
-        'has_accent_color': accent_color_component,
     }
     components = [f() for k, f in inserts.items() if sb_template[k]]
     components.extend(text_components(text_meta))
@@ -472,10 +507,9 @@ data = {
     'name': template_names,
     'thumbnail': [sb_data['thumbnails'].get(x) for x in template_names],
     'has_background_image': [sb_data['components'].get(x, {}).get('has_background_image') for x in template_names],
-    'has_background_shape': [sb_data['components'].get(x, {}).get('has_background_shape') for x in template_names],
     'has_logo': [sb_data['components'].get(x, {}).get('has_logo') for x in template_names],
-    'has_background_color': [sb_data['components'].get(x, {}).get('has_background_color') for x in template_names],
-    'has_accent_color':  [sb_data['components'].get(x, {}).get('has_accent_color') for x in template_names],
+    'background_color_layer': [sb_data['components'].get(x, {}).get('background_color_layer') for x in template_names],
+    'accent_color_layer':  [sb_data['components'].get(x, {}).get('accent_color_layer') for x in template_names],
     'theme': [db_data['themes'].get(x) for x in template_names],
     'approved': [db_data['approved'].get(x, False) for x in template_names],
     'notes': [db_data['notes'].get(x, '') for x in template_names],
@@ -516,18 +550,9 @@ with st.sidebar:
         filter_has_background_image = st.selectbox('Has Background Image', options=[None, True, False], index=0)
         if filter_has_background_image is not None:
             df = df[df.has_background_image == filter_has_background_image]
-        filter_has_background_shape = st.selectbox('Has Background Shape', options=[None, True, False], index=0)
-        if filter_has_background_shape is not None:
-            df = df[df.has_background_shape == filter_has_background_shape]
         filter_has_logo = st.selectbox('Has Logo', options=[None, True, False], index=0)
         if filter_has_logo is not None:
             df = df[df.has_logo == filter_has_logo]
-        filter_has_background_color = st.selectbox('Has Background Color', options=[None, True, False], index=0)
-        if filter_has_background_color is not None:
-            df = df[df['has_background_color'] == filter_has_background_color]
-        filter_has_accent_color = st.selectbox('Has Accent Color', options=[None, True, False], index=0)
-        if filter_has_accent_color is not None:
-            df = df[df['has_accent_color'] == filter_has_accent_color]
         filter_approved = st.selectbox('Approved', options=[None, True, False], index=0)
         if filter_approved is not None:
             df = df[df['approved'] == filter_approved]
@@ -591,12 +616,10 @@ with st.sidebar:
     if st.button('Push to Prod'):
         prod_themes_table = boto3.resource('dynamodb').Table('themes-prod')
         prod_canvas_table = boto3.resource('dynamodb').Table('switchboard-prod')
-        for item in THEMES_TABLE.scan()['Items']:
-            prod_themes_table.put_item(Item=item)
-        st.toast("Pushed themes to prod")
-        for item in CANVAS_TABLE.scan()['Items']:
-            prod_canvas_table.put_item(Item=item)
-        st.toast("Pushed templates to prod")
+        delete_all(prod_themes_table, 'name')
+        put_all(prod_themes_table, THEMES_TABLE.scan()['Items'])
+        delete_all(prod_canvas_table, 'name')
+        put_all(prod_canvas_table, CANVAS_TABLE.scan()['Items'])
 
 
 load = 50
@@ -615,11 +638,11 @@ for row in df.head(load).sort_index().itertuples():
     with cols[2]:
         st.text(row.theme)
     with cols[3]:
-        st.markdown(f'- bg-color: {"✅" if row.has_background_color else "❌"}')
-        st.markdown(f'- accent: {"✅" if row.has_accent_color else "❌"}')
-    with cols[4]:
+        st.markdown(f'- bg-color: {"✅" if row.background_color_layer else "❌"}')
+        st.markdown(f'- accent: {"✅" if row.accent_color_layer else "❌"}')
         st.markdown(f'- bg-photo: {"✅" if row.has_background_image else "❌"}')
-        st.markdown(f'- bg-shape: {"✅" if row.has_background_shape else "❌"}')
+    with cols[4]:
+        # st.markdown(f'- bg-shape: {"✅" if row.has_background_shape else "❌"}')
         st.markdown(f'- logo: {"✅" if row.has_logo else "❌"}')
     with cols[5]:
         st.markdown(f'- in-db: {"✅" if row.in_db else "❌"}')
