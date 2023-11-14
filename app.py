@@ -216,12 +216,12 @@ def switchboard_template(components):
     def is_background_colored(component):
         return (is_shape_named(component, 'object1')
                 or is_image_named(component, 'colored-layer-background', require_svg=True)
-                or is_image_named(component, 'bc-', require_svg=True, prefix=True))
+                or is_image_named(component, 'bc-', require_svg=True, prefix=True)
+                or is_shape_named(component, 'bc-', prefix=True))
 
     def is_accent_colored(component):
-        return (is_shape_named(component, 'object1')
-                or is_image_named(component, 'colored-layer-background', require_svg=True)
-                or is_image_named(component, 'bc-', require_svg=True, prefix=True))
+        return (is_image_named(component, 'colored-layer', require_svg=True)
+                or is_shape_named(component, 'ac-', prefix=True))
 
     def get_background_layer():
         return [x for x in components if is_background_colored(x)]
@@ -289,10 +289,10 @@ def sb_template_to_db_components(sb_template: dict, text_meta: dict):
 
     def background_image_component():
         return image_component('image1')
-    
+
     def logo_component():
         return image_component('logo')
-    
+
     def logo_bg_component():
         return image_component('logo-bg')
 
@@ -306,6 +306,10 @@ def sb_template_to_db_components(sb_template: dict, text_meta: dict):
     }
     components = [f() for k, f in inserts.items() if sb_template[k]]
     components.extend(text_components(text_meta))
+    components.extend(image_component(x['name']) if x['type'] == 'image' else shape_component(x['name'])
+                      for x in sb_template['background_color_layer'])
+    components.extend(image_component(x['name']) if x['type'] == 'image' else shape_component(x['name'])
+                      for x in sb_template['accent_color_layer'])
     return components
 
 
@@ -621,6 +625,12 @@ with st.sidebar:
         delete_all(prod_canvas_table, 'name')
         put_all(prod_canvas_table, CANVAS_TABLE.scan()['Items'])
 
+    global_notes = st.session_state.get('global_notes') or get_storage('global_notes')
+    new_global_notes = st.text_area('Global Notes', value=global_notes, height=500)
+    if new_global_notes != global_notes:
+        put_storage('global_notes', new_global_notes)
+        st.session_state['global_notes'] = new_global_notes
+
 
 load = 50
 if len(df) == 0:
@@ -638,8 +648,9 @@ for row in df.head(load).sort_index().itertuples():
     with cols[2]:
         st.text(row.theme)
     with cols[3]:
-        st.markdown(f'- bg-color: {"✅" if row.background_color_layer else "❌"}')
-        st.markdown(f'- accent: {"✅" if row.accent_color_layer else "❌"}')
+        st.markdown(f'Switchboard')
+        st.markdown(f"- bg-color: {[x['name'] for x in row.sb.get('background_color_layer', [])]}")
+        st.markdown(f"- accent: {[x['name'] for x in row.sb.get('accent_color_layer', [])]}")
         st.markdown(f'- bg-photo: {"✅" if row.has_background_image else "❌"}')
     with cols[4]:
         # st.markdown(f'- bg-shape: {"✅" if row.has_background_shape else "❌"}')
