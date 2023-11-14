@@ -650,8 +650,8 @@ for row in df.head(load).sort_index().itertuples():
         st.markdown(f'- logo: {"✅" if row.sb.get("has_logo") else "❌"}')
     with cols[4]:
         st.markdown(f'Database')
-        st.markdown(f"- bg-color: {[x['name'] for x in row.db.get('background_color_layer', [])]}")
-        st.markdown(f"- accent: {[x['name'] for x in row.db.get('accent_color_layer', [])]}")
+        st.markdown(f"- bg-color: {[x['key'] for x in row.db.get('background_color_layer', [])]}")
+        st.markdown(f"- accent: {[x['key'] for x in row.db.get('accent_color_layer', [])]}")
         st.markdown(f'- bg-photo: {"✅" if row.db.get("has_background_image") else "❌"}')
         st.markdown(f'- logo: {"✅" if row.db.get("has_logo") else "❌"}')
     with cols[5]:
