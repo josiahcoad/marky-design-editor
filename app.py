@@ -657,9 +657,9 @@ for row in df.head(load).sort_index().itertuples():
     with cols[5]:
         st.markdown(f'- in-db: {"✅" if row.in_db else "❌"}')
         st.markdown(f'- in-sb: {"✅" if row.in_sb else "❌"}')
-        st.markdown(f'- match: {"✅" if row.matches else "❌"}',
-                    help=format_diff(get_json_diff(row.sb, db_templates_for_diff[row.name]))
-                         if (row.sb and row.name in db_templates_for_diff) else None)
+        # st.markdown(f'- match: {"✅" if row.matches else "❌"}',
+        #             help=format_diff(get_json_diff(row.sb, db_templates_for_diff[row.name]))
+        #                  if (row.sb and row.name in db_templates_for_diff) else None)
 
 
     if row.in_sb:
