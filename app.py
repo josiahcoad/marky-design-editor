@@ -223,7 +223,7 @@ def switchboard_template(components):
     def is_accent_colored(component):
         return (is_image_named(component, 'colored-layer', require_svg=True)
                 or is_shape_named(component, 'ac-', prefix=True)
-                or is_image_named(component, 'ac-', prefix=True))
+                or is_image_named(component, 'ac-', prefix=True, require_svg=True))
 
     def get_background_layer():
         return [x for x in components if is_background_colored(x)]
