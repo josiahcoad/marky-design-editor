@@ -161,7 +161,8 @@ def get_db_template(components):
 
     def is_accent_colored(component):
         return (is_image_named(component, 'colored-layer')
-                or is_image_named(component, 'ac-', prefix=True) or is_shape_named(component, 'ac-', prefix=True))
+                or is_image_named(component, 'ac-', prefix=True)
+                or is_shape_named(component, 'ac-', prefix=True))
 
     def get_background_layer():
         return [x for x in components if is_background_colored(x)]
@@ -221,7 +222,8 @@ def switchboard_template(components):
 
     def is_accent_colored(component):
         return (is_image_named(component, 'colored-layer', require_svg=True)
-                or is_shape_named(component, 'ac-', prefix=True))
+                or is_shape_named(component, 'ac-', prefix=True)
+                or is_image_named(component, 'ac-', prefix=True))
 
     def get_background_layer():
         return [x for x in components if is_background_colored(x)]
@@ -507,10 +509,6 @@ template_names = list(set(sb_data['components'].keys()).union(db_data['component
 data = {
     'name': template_names,
     'thumbnail': [sb_data['thumbnails'].get(x) for x in template_names],
-    'has_background_image': [sb_data['components'].get(x, {}).get('has_background_image') for x in template_names],
-    'has_logo': [sb_data['components'].get(x, {}).get('has_logo') for x in template_names],
-    'background_color_layer': [sb_data['components'].get(x, {}).get('background_color_layer') for x in template_names],
-    'accent_color_layer':  [sb_data['components'].get(x, {}).get('accent_color_layer') for x in template_names],
     'theme': [db_data['themes'].get(x) for x in template_names],
     'approved': [db_data['approved'].get(x, False) for x in template_names],
     'notes': [db_data['notes'].get(x, '') for x in template_names],
@@ -648,10 +646,14 @@ for row in df.head(load).sort_index().itertuples():
         st.markdown(f'Switchboard')
         st.markdown(f"- bg-color: {[x['name'] for x in row.sb.get('background_color_layer', [])]}")
         st.markdown(f"- accent: {[x['name'] for x in row.sb.get('accent_color_layer', [])]}")
-        st.markdown(f'- bg-photo: {"✅" if row.has_background_image else "❌"}')
+        st.markdown(f'- bg-photo: {"✅" if row.sb.get("has_background_image") else "❌"}')
+        st.markdown(f'- logo: {"✅" if row.sb.get("has_logo") else "❌"}')
     with cols[4]:
-        # st.markdown(f'- bg-shape: {"✅" if row.has_background_shape else "❌"}')
-        st.markdown(f'- logo: {"✅" if row.has_logo else "❌"}')
+        st.markdown(f'Database')
+        st.markdown(f"- bg-color: {[x['name'] for x in row.db.get('background_color_layer', [])]}")
+        st.markdown(f"- accent: {[x['name'] for x in row.db.get('accent_color_layer', [])]}")
+        st.markdown(f'- bg-photo: {"✅" if row.db.get("has_background_image") else "❌"}')
+        st.markdown(f'- logo: {"✅" if row.db.get("has_logo") else "❌"}')
     with cols[5]:
         st.markdown(f'- in-db: {"✅" if row.in_db else "❌"}')
         st.markdown(f'- in-sb: {"✅" if row.in_sb else "❌"}')
