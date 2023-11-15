@@ -399,6 +399,10 @@ def reload_image(template_name, sb_template, meta):
     fill_canvas_and_update_thumbnail(template_name, meta)
     st.text('Done')
 
+fill_canvas_error = st.session_state.get('fill_canvas_error')
+if fill_canvas_error:
+    st.error(fill_canvas_error)
+    st.stop()
 
 def fill_canvas_and_update_thumbnail(template_name, meta):
     st.toast(f"Requesting new image for {template_name}...")
@@ -424,7 +428,8 @@ def fill_canvas(template_name, fill_values, meta):
                              json=payload,
                              headers={'Authorization': f'Bearer {DEV_API_TOKEN}'})
     if not response.ok:
-        st.error(response.text)
+        st.session_state['fill_canvas_error'] = response.text
+        st.rerun()
         return None
     return response.json()['image_url']
 
@@ -433,6 +438,15 @@ def refresh():
     st.session_state['sb_data'] = None
     st.session_state['db_data'] = None
     st.cache_data.clear()
+    # for template in sb_templates:
+    #     if template not in db_templates:
+    #         CANVAS_TABLE.put_item(Item={'name': template, 'components': sb_templates[template]})
+    #         st.session_state['db_data']['components'][template] = sb_templates[template]
+
+    # for template in db_templates:
+    #     if template not in sb_templates:
+    #         CANVAS_TABLE.delete_item(Key={'name': template})
+    #         st.session_state['db_data']['components'].pop(template)
     st.rerun()
 
 
@@ -610,6 +624,7 @@ with st.sidebar:
 
     if st.button("Pull Switchboard Changes"):
         refresh()
+
     st.info("⬆️ Run whenever you add a component or change it's name")
 
     if st.button('Push to Prod'):
