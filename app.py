@@ -537,14 +537,21 @@ data = {
 df = pd.DataFrame(data).sort_values('theme').set_index('name')
 df['name'] = df.index
 
+if not st.session_state.get('theme-choice'):
+    theme_choice = st.session_state['theme-choice'] = get_storage('theme-choice')
+
 # add filters in a  sidebar
 with st.sidebar:
     theme_names = list(df.theme.unique()) + [None]
     color_editable = {name: get_themes().get(name, {}).get('color_editable', False) for name in theme_names}
     theme = st.selectbox('Theme',
-                        options=theme_names,
-                        index=0,
-                        format_func=lambda x: f'{x} {"(color)" if color_editable[x] else ""}')
+                         options=theme_names,
+                         index=theme_names.index(theme_choice),
+                         format_func=lambda x: f'{x} {"(color)" if color_editable[x] else ""}')
+    if theme != st.session_state['theme-choice']:
+        st.session_state['theme-choice'] = theme
+        put_storage('theme-choice', theme)
+
     if theme:
         df = df[df.theme == theme]
     with st.expander('More Filters'):
@@ -656,7 +663,15 @@ for row in df.head(load).sort_index().itertuples():
         if bool(approval_status) != bool(row.approved): # ie status changed
             change_approval_status(row.name, approval_status)
     with cols[2]:
-        st.text(row.theme)
+        theme = st.selectbox('theme', options=theme_names, index=theme_names.index(row.theme), key=f'theme-{row.name}')
+        if theme != row.theme:
+            CANVAS_TABLE.update_item(
+                Key={'name': row.name},
+                UpdateExpression='SET theme = :theme',
+                ExpressionAttributeValues={':theme': theme},
+            )
+            st.session_state['db_data']['themes'][row.name] = theme
+            st.rerun()
     with cols[3]:
         st.markdown(f'Switchboard')
         st.markdown(f"- bg-color: {[x['name'] for x in row.sb.get('background_color_layer', [])]}")
