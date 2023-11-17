@@ -537,7 +537,8 @@ data = {
 df = pd.DataFrame(data).sort_values('theme').set_index('name')
 df['name'] = df.index
 
-if not st.session_state.get('theme-choice'):
+theme_choice = st.session_state.get('theme-choice')
+if not theme_choice:
     theme_choice = st.session_state['theme-choice'] = get_storage('theme-choice')
 
 # add filters in a  sidebar
