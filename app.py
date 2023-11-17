@@ -1,12 +1,16 @@
 from copy import deepcopy
 import os
-from typing import Dict
+from typing import Dict, List, Literal
 import pandas as pd
+from pydantic import BaseModel
 import streamlit as st
 import boto3
 import requests
 from io import BytesIO
 from PIL import Image
+
+import db_utils as db
+import dto
 
 
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
@@ -36,44 +40,22 @@ text_content = {
     'content2': "Start with the minimum viable product. Don't try to build the perfect product from the start. If you do, you'll waste a lot of time and money.",
 }
 
-ipsem = "This Python package runs a Markov chain algorithm over the surviving works of the Roman historian Tacitus to generate naturalistic-looking pseudo-Latin gibberish. Useful when you need to generate dummy text as a placeholder in templates, etc. Brigantes femina duce exurere coloniam, expugnare castra, ac nisi felicitas in tali"
+IPSEM_TEXT = "This Python package runs a Markov chain algorithm over the surviving works of the Roman historian Tacitus to generate naturalistic-looking pseudo-Latin gibberish. Useful when you need to generate dummy text as a placeholder in templates, etc. Brigantes femina duce exurere coloniam, expugnare castra, ac nisi felicitas in tali"
 
-switchboard_template_url_prefix = "https://www.switchboard.ai/s/canvas/editor/"
+SB_TEMPLATE_EDTOR_URL_PREFIX = "https://www.switchboard.ai/s/canvas/editor/"
 S3_URL_PREFIX = 'https://marky-image-posts.s3.amazonaws.com/'
 
 SB_TOKEN_ST_KEY = 'sb_token'
+SB_COOKIE_ST_KEY = 'sb_cookie'
 FILL_VALUES_ST_KEY = 'fill_values'
 
 DEV_URL = 'https://psuf5gocxc.execute-api.us-east-1.amazonaws.com/api'
 DEV_API_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNTI1YzdmNC00ZTM5LTQ0N2ItODRlMy0xZWE5OWI3ZjA5MGYiLCJpYXQiOjE2OTUwOTQ0ODYsIm5iZiI6MTY5NTA5NDQ4NiwiZXhwIjoxNzI2NjMwNDg2fQ.G-e-NnDenhLs6HsM6ymLfQz_lTHTo8RX4oZB9I5hJI0' # admin@admin.com
-CANVAS_TABLE = boto3.resource('dynamodb').Table('switchboard-dev')
-THEMES_TABLE = boto3.resource('dynamodb').Table('themes-dev')
-STORAGE_TABLE = boto3.resource('dynamodb').Table('internal-design-editor')
 
-
-def put_storage(key, value):
-    STORAGE_TABLE.put_item(Item={'key': key, 'value': value})
-
-
-def get_storage(key):
-    return STORAGE_TABLE.get_item(Key={'key': key}).get('Item', {}).get('value')
-
-
-def put_all(table, items):
-    with table.batch_writer() as batch:
-        for item in items:
-            batch.put_item(Item=item)
-
-
-def delete_all(table, key_name):
-    items = table.scan()['Items']
-    with table.batch_writer() as batch:
-        for item in items:
-            batch.delete_item(Key={key_name: item[key_name]})
 
 
 if not st.session_state.get(FILL_VALUES_ST_KEY):
-    st.session_state[FILL_VALUES_ST_KEY] = get_storage(FILL_VALUES_ST_KEY) or {
+    st.session_state[FILL_VALUES_ST_KEY] = db.get_storage(FILL_VALUES_ST_KEY) or {
         'background_image_url': list(background_urls.values())[0],
         'logo_url': list(logo_urls.values())[0],
         'background_color': "#ecc9bf",
@@ -81,104 +63,18 @@ if not st.session_state.get(FILL_VALUES_ST_KEY):
         'text_color': "#064e84", # blue
         'text_content': text_content,
     }
-    put_storage(FILL_VALUES_ST_KEY, st.session_state[FILL_VALUES_ST_KEY])
+    db.put_storage(FILL_VALUES_ST_KEY, st.session_state[FILL_VALUES_ST_KEY])
 
 
 @st.cache_data
 def get_db_templates():
-    scan_response = CANVAS_TABLE.scan()
-    templates = scan_response['Items']
+    templates = db.list_canvases()
     return {
         'components': {x['name']: get_db_template(x['components']) for x in templates},
         'themes': {x['name']: x['theme'] for x in templates},
         'approved': {x['name']: x.get('approved') for x in templates},
         'notes': {x['name']: x.get('notes') for x in templates},
     }
-
-
-@st.cache_data
-def get_themes():
-    scan_response = THEMES_TABLE.scan()
-    themes = scan_response['Items']
-    return {x['name']: x for x in themes}
-
-
-@st.cache_data(experimental_allow_widgets=True)
-def get_sb_templates():
-    # see if we have a token in persistent storage
-    token = get_storage(SB_TOKEN_ST_KEY)
-
-    if not token:
-        st.markdown(f"Get new token [from switchboard](https://www.switchboard.ai/s/canvas)")
-        text = st.text_input('token')
-        if st.button('Submit'):
-            put_storage(SB_TOKEN_ST_KEY, text)
-            st.rerun()
-        st.stop()
-
-    headers = {
-        'authority': 'www.switchboard.ai',
-        'accept': 'application/json, text/plain, */*',
-        'accept-language': 'en-US,en;q=0.9',
-        'authorization': f"Bearer {token}",
-        'Cookie': "_ga=GA1.1.519206553.1682785335; intercom-id-dtjeof09=93f2077c-f6e0-4bab-bca1-4c50d9fa7579; intercom-device-id-dtjeof09=1102363e-9c4c-4f9f-aad7-c3a8eec015f8; __stripe_mid=c6024ef6-7631-4951-8b45-b85ed94615a27b2ff9; csrf_token=51a95e43-064f-4565-8d12-d80d578c12d6; connect.sid=s%3AY0cBlpkdVIxDFP47O1btY06Pn7E7KYRi.TaFDlXrkwpPb4N%2B05IcNUK3u468SDUMEUyCUKQH6Ggg; fs_uid=#15F16C#f9454a6a-f127-4d00-b217-518b0417d000:e8d6b1e4-c2ab-489e-99b6-ff900f5a77bc:1699858192475::1#bea14a1f#/1714321356; intercom-session-dtjeof09=ajNpZ0h1d20ralhvMUZ6UDl5U2hhY2x6amlxMm1JSEc0TTkrWWhaK2huK3QreWZ0T0RzbzVsbDl3S0RCaG50RS0tMmJtUlhYSFJXVVZRdGNIUjBIN2w1UT09--ffbd60e094f84441019dcdb7c41f7e1ecda93c9e; _ga_HT90M3YVTX=GS1.1.1700063315.75.0.1700063322.0.0.0; __stripe_sid=b4cfcc03-94e7-43ca-a879-df129484cdff503b1b; AWSALBTG=0WyWliMo76A/1RmnF3/5btCDD4uL/QyK+pqhSBL73XMeex9x1UgwuKhiEJB9apNBrW82YM9MPI7nIvoXOm6I5q8LvD5w+kVNgPUWfdcpa5kneE5fCYut4Wkm8cfVA6H+PzVLM9XAsDCVNT3xQ9LRkuLJ4t1IUf5hv2jdA5wmLqCG; AWSALBTGCORS=0WyWliMo76A/1RmnF3/5btCDD4uL/QyK+pqhSBL73XMeex9x1UgwuKhiEJB9apNBrW82YM9MPI7nIvoXOm6I5q8LvD5w+kVNgPUWfdcpa5kneE5fCYut4Wkm8cfVA6H+PzVLM9XAsDCVNT3xQ9LRkuLJ4t1IUf5hv2jdA5wmLqCG",
-    }
-
-    response = requests.get('https://www.switchboard.ai/api/canvas/templates', headers=headers)
-    success = response.status_code == 200
-    if not success:
-        st.markdown(f"Get new token [from switchboard](https://www.switchboard.ai/s/canvas)")
-        text = st.text_input('token')
-        if st.button('Submit'):
-            put_storage(SB_TOKEN_ST_KEY, text)
-            st.rerun()
-        st.stop()
-
-    templates = response.json()
-
-    my_thumbnails = list_s3_objects()
-    return {
-        'components': {x['apiName']: switchboard_template(x['configuration']) for x in templates if x['configuration']},
-        'thumbnails': {x['apiName']: my_thumbnails.get(x['apiName'], x['thumbnailUrl'])  for x in templates},
-        'template_id': {x['apiName']: x['id']  for x in templates},
-    }
-
-
-def get_db_template(components):
-    def is_image_named(component, name, prefix=False):
-        return component['type'] == 'IMAGE' and (component['key'] == name if not prefix else component['key'].startswith(name))
-
-    def is_shape_named(component, name, prefix=False):
-        return component['type'] == 'SHAPE' and (component['key'] == name if not prefix else component['key'].startswith(name))
-
-    def has_image_named(name):
-        return any(is_image_named(x, name) for x in components)
-
-    def is_background_colored(component):
-        return (is_shape_named(component, 'object1')
-                or is_image_named(component, 'colored-layer-background')
-                or is_image_named(component, 'bc-', prefix=True) or is_shape_named(component, 'bc-', prefix=True))
-
-    def is_accent_colored(component):
-        return (is_image_named(component, 'colored-layer')
-                or is_image_named(component, 'ac-', prefix=True)
-                or is_shape_named(component, 'ac-', prefix=True))
-
-    def get_background_layer():
-        return [x for x in components if is_background_colored(x)]
-
-    def get_accent_layer():
-        return [x for x in components if is_accent_colored(x)]
-
-    return {
-        'has_background_image': has_image_named('image1'),
-        'background_color_layer': get_background_layer(),
-        'accent_color_layer': get_accent_layer(),
-        'has_logo': has_image_named('logo'),
-        'has_logo_bg': has_image_named('logo-bg'),
-        'text_meta': {x['key']: extract_meta(x) for x in components if x['type'] == 'TEXT'},
-    }
-
 
 def extract_meta(db_text_component):
     return {
@@ -188,131 +84,92 @@ def extract_meta(db_text_component):
         'optional': db_text_component.get('optional', False),
     }
 
+@st.cache_data
+def get_themes():
+    return {x['name']: x for x in db.list_themes()}
+
+
+@st.cache_data(experimental_allow_widgets=True)
+def get_sb_templates():
+    # see if we have a token in persistent storage
+    token = db.get_storage(SB_TOKEN_ST_KEY)
+    cookie = db.get_storage(SB_COOKIE_ST_KEY)
+
+    headers = {
+        'authority': 'www.switchboard.ai',
+        'accept': 'application/json, text/plain, */*',
+        'accept-language': 'en-US,en;q=0.9',
+        'authorization': f"Bearer {token}",
+        'Cookie': cookie,
+    }
+
+    try:
+        response = requests.get('https://www.switchboard.ai/api/canvas/templates', headers=headers, timeout=10)
+        success = response.status_code == 200
+    except requests.exceptions.Timeout:
+        st.markdown("Get new cookie [from switchboard](https://www.switchboard.ai/s/canvas)")
+        text = st.text_input('cookie')
+        if st.button('Submit'):
+            db.put_storage(SB_COOKIE_ST_KEY, text)
+            st.rerun()
+        st.stop()
+
+    if not success:
+        st.markdown(f"Get new token [from switchboard](https://www.switchboard.ai/s/canvas)")
+        text = st.text_input('token')
+        if st.button('Submit'):
+            db.put_storage(SB_TOKEN_ST_KEY, text)
+            st.rerun()
+        st.stop()
+
+    templates = response.json()
+
+    my_thumbnails = list_s3_objects()
+    return {
+        'components': {x['apiName']: switchboard_template(x['apiName'], x['configuration'])
+                       for x in templates if x['configuration']},
+        'thumbnails': {x['apiName']: my_thumbnails.get(x['apiName'], x['thumbnailUrl'])  for x in templates},
+        'template_id': {x['apiName']: x['id'] for x in templates},
+    }
+
+
+def switchboard_template(name, components):
+    del components['template']
+    components = components.values()
+    return dto.Canvas.from_sb(name, components)
+
+
+def sb_template_to_db_components(dto.MarkyCanvas):
+
+def sync_sb_to_db():
+    st.session_state['sb_data'] = None
+    st.session_state['db_data'] = None
+    st.cache_data.clear()
+
+    sb_templates: Dict[str, dto.Canvas] = sb_data['components']
+    db_templates: Dict[str, dto.MarkyCanvas] = db_data['components'].values()
+    all_templates: 
+
+    for name, sb_template in sb_templates.items():
+        if name not in db_templates:
+            db.put_canvas(dto.MarkyCanvas.from_canvas(sb_template).as_db_item)
+        elif sb_template.editable_components != db_templates[name].editable_components:
+            new_canvas = dto.MarkyCanvas.from_canvas_and_partial_meta(sb_template,
+                                                                      db_template,
+                                                                      db_template.text_meta)
+            st.session_state['db_data']['components'][template] = sb_templates[template]
+
+    for template in db_templates:
+        if template not in sb_templates:
+            CANVAS_TABLE.delete_item(Key={'name': template})
+            st.session_state['db_data']['components'].pop(template)
+
+
 
 def clickable_image(image_url, target_url, image_size=100):
     markdown = f'<a href="{target_url}" target="_blank"><img src="{image_url}" width="{image_size}" height="{image_size}"></a>'
     st.markdown(markdown, unsafe_allow_html=True)
     st.image(image_url, width=image_size)
-
-
-def switchboard_template(components):
-    del components['template']
-    components = components.values()
-
-    def is_image_named(component, name, require_svg=False, prefix=False):
-        if require_svg:
-            return (component['type'] == 'image'
-                    and (component['name'] == name or (prefix and component['name'].startswith(name)))
-                    and component['imageSvgFill']
-                    and component['url']['file']['filename'].endswith('svg'))
-
-        return component['type'] == 'image' and component['name'] == name
-
-    def is_shape_named(component, name, prefix=False):
-        return component['type'] == 'rectangle' and (component['name'] == name or (prefix and component['name'].startswith(name)))
-
-    def has_image_named(name):
-        return any(is_image_named(x, name) for x in components)
-
-    def is_background_colored(component):
-        return (is_shape_named(component, 'object1')
-                or is_image_named(component, 'colored-layer-background', require_svg=True)
-                or is_image_named(component, 'bc-', require_svg=True, prefix=True)
-                or is_shape_named(component, 'bc-', prefix=True))
-
-    def is_accent_colored(component):
-        return (is_image_named(component, 'colored-layer', require_svg=True)
-                or is_shape_named(component, 'ac-', prefix=True)
-                or is_image_named(component, 'ac-', prefix=True, require_svg=True))
-
-    def get_background_layer():
-        return [x for x in components if is_background_colored(x)]
-    
-    def get_accent_layer():
-        return [x for x in components if is_accent_colored(x)]
-
-    return {
-        'has_background_image': has_image_named('image1'),
-        'has_logo': has_image_named('logo'),
-        'has_logo_bg': has_image_named('logo-bg'),
-        'background_color_layer': get_background_layer(),
-        'accent_color_layer': get_accent_layer(),
-        'text_keys': sorted([x['name'] for x in components if x['type'] == 'text']),
-    }
-
-
-def get_json_diff(a: dict, b: dict):
-    missing = set(a.keys()) - set(b.keys())
-    extra = set(b.keys()) - set(a.keys())
-    difference = {o: (a[o], b[o]) for o in set(a.keys()) & set(b.keys()) if a[o] != b[o]}
-    payload = {}
-    if missing:
-        payload['missing'] = missing
-    if extra:
-        payload['extra'] = extra
-    if difference:
-        payload['diff'] = difference
-    return payload
-
-
-def format_diff(diff):
-    if not diff:
-        return ''
-    payload = []
-    if missing := diff.get('missing'):
-        payload.append(f'Missing in db: {missing}')
-    if extra := diff.get('extra'):
-        payload.append(f'Extra in db: {extra}')
-    if diff := diff.get('diff'):
-        for key, (sb, db) in diff.items():
-            payload.append(f'{key}: sb={sb}, db={db}')
-    return '\n'.join(payload)
-
-
-def sb_template_to_db_components(sb_template: dict, text_meta: dict):
-    def image_component(name):
-        return {
-            'type': 'IMAGE',
-            'key': name,
-        }
-    
-    def shape_component(name):
-        return {
-            'type': 'SHAPE',
-            'key': name,
-        }
-    
-    def text_component(name, meta):
-        return {
-            'type': 'TEXT',
-            'key': name,
-            **meta,
-        }
-
-    def background_image_component():
-        return image_component('image1')
-
-    def logo_component():
-        return image_component('logo')
-
-    def logo_bg_component():
-        return image_component('logo-bg')
-
-    def text_components(text_meta: Dict[str, dict]):
-        return [text_component(key, value) for key, value in text_meta.items()]
-
-    inserts = {
-        'has_background_image': background_image_component,
-        'has_logo': logo_component,
-        'has_logo_bg': logo_bg_component,
-    }
-    components = [f() for k, f in inserts.items() if sb_template[k]]
-    components.extend(text_components(text_meta))
-    components.extend(image_component(x['name']) if x['type'] == 'image' else shape_component(x['name'])
-                      for x in sb_template['background_color_layer'])
-    components.extend(image_component(x['name']) if x['type'] == 'image' else shape_component(x['name'])
-                      for x in sb_template['accent_color_layer'])
-    return components
 
 
 def upload_image_to_s3(image_url, object_name, bucket_name='marky-image-posts', prefix='thumbnails'):
@@ -343,7 +200,7 @@ def get_filler_text(value, meta):
     max_characters = meta['max_characters']
     value = value[:max_characters]
     if len(value) < max_characters:
-        value += ipsem[:max_characters - len(value)]
+        value += IPSEM_TEXT[:max_characters - len(value)]
     return value
 
 
@@ -438,15 +295,6 @@ def refresh():
     st.session_state['sb_data'] = None
     st.session_state['db_data'] = None
     st.cache_data.clear()
-    # for template in sb_templates:
-    #     if template not in db_templates:
-    #         CANVAS_TABLE.put_item(Item={'name': template, 'components': sb_templates[template]})
-    #         st.session_state['db_data']['components'][template] = sb_templates[template]
-
-    # for template in db_templates:
-    #     if template not in sb_templates:
-    #         CANVAS_TABLE.delete_item(Key={'name': template})
-    #         st.session_state['db_data']['components'].pop(template)
     st.rerun()
 
 
@@ -458,7 +306,7 @@ def display_action_bar(template_name, sb_template, text_meta):
 
     with col1:
         st.markdown(
-            f"[Open]({switchboard_template_url_prefix + sb_data['template_id'][template_name]})",
+            f"[Open]({SB_TEMPLATE_EDTOR_URL_PREFIX + sb_data['template_id'][template_name]})",
             unsafe_allow_html=True,
         )
 
