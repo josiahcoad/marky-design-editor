@@ -541,10 +541,12 @@ theme_choice = st.session_state.get('theme-choice')
 if not theme_choice:
     theme_choice = st.session_state['theme-choice'] = get_storage('theme-choice')
 
+themes = get_themes()
+
 # add filters in a  sidebar
 with st.sidebar:
-    theme_names = list(df.theme.unique()) + [None]
-    color_editable = {name: get_themes().get(name, {}).get('color_editable', False) for name in theme_names}
+    theme_names = list(sorted(themes.keys(), key=lambda x: x.lower()))  + [None]
+    color_editable = {name: themes.get(name, {}).get('color_editable', False) for name in theme_names}
     theme = st.selectbox('Theme',
                          options=theme_names,
                          index=theme_names.index(theme_choice),
@@ -642,6 +644,15 @@ with st.sidebar:
         put_all(prod_themes_table, THEMES_TABLE.scan()['Items'])
         delete_all(prod_canvas_table, 'name')
         put_all(prod_canvas_table, CANVAS_TABLE.scan()['Items'])
+
+
+    import streamlit as st
+    with st.expander("Add a theme"):
+        theme_name = st.text_input('Theme Name')
+        color_editable = st.checkbox('Color Editable')
+        if st.button('Submit'):
+            THEMES_TABLE.put_item(Item={'name': theme_name, 'color_editable': color_editable})
+            refresh()
 
     global_notes = st.session_state.get('global_notes') or get_storage('global_notes')
     new_global_notes = st.text_area('Global Notes', value=global_notes, height=500)
