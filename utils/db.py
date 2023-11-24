@@ -1,15 +1,16 @@
 import boto3
+from utils.dto import Canvas
 
-CANVAS_TABLE_NAME = 'switchboard-dev'
+CANVAS_TABLE_NAME = 'canvas-dev'
 THEMES_TABLE_NAME = 'themes-dev'
 STORAGE_TABLE_NAME = 'internal-design-editor'
 DDB_RESOURCE = boto3.resource('dynamodb')
 
-def put_canvas(item):
-    put(CANVAS_TABLE_NAME, item)
+def put_canvas(canvas: Canvas):
+    put(CANVAS_TABLE_NAME, canvas.model_dump())
 
 def list_canvases():
-    return list_all(CANVAS_TABLE_NAME)
+    return [Canvas(**x) for x in list_all(CANVAS_TABLE_NAME)]
 
 def list_themes():
     return list_all(THEMES_TABLE_NAME)
@@ -18,8 +19,13 @@ def put_storage(key, value):
     put(STORAGE_TABLE_NAME, {'key': key, 'value': value})
 
 
+def put_theme(item):
+    put(THEMES_TABLE_NAME, item)
+
+
 def get_storage(key):
-    return get(STORAGE_TABLE_NAME, key)
+    obj = get(STORAGE_TABLE_NAME, {'key': key})
+    return obj['value'] if obj else None
 
 
 def put(table_name, item):
@@ -29,7 +35,8 @@ def put(table_name, item):
 
 def get(table_name, key):
     table = DDB_RESOURCE.Table(table_name)
-    return table.get_item(Key=key)['Item']
+    response = table.get_item(Key=key)
+    return response.get('Item')
 
 
 def list_all(table_name):
