@@ -2,8 +2,8 @@ import os
 import boto3
 from utils.dto import Canvas
 
-CANVAS_TABLE_NAME = 'canvas-dev'
-THEMES_TABLE_NAME = 'themes-dev'
+CANVAS_TABLE_NAME = 'canvas-prod'
+THEMES_TABLE_NAME = 'themes-prod'
 STORAGE_TABLE_NAME = 'internal-design-editor'
 
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
