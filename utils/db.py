@@ -1,9 +1,12 @@
+import os
 import boto3
 from utils.dto import Canvas
 
 CANVAS_TABLE_NAME = 'canvas-dev'
 THEMES_TABLE_NAME = 'themes-dev'
 STORAGE_TABLE_NAME = 'internal-design-editor'
+
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 DDB_RESOURCE = boto3.resource('dynamodb')
 
 def put_canvas(canvas: Canvas):

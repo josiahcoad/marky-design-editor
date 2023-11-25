@@ -12,8 +12,6 @@ from utils.get_canvas_data import get_canvas_data
 from utils.s3utils import upload_image_to_s3
 
 
-os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
-
 st.set_page_config(layout='wide')
 
 
