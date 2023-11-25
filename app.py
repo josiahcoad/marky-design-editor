@@ -79,7 +79,7 @@ def get_canvases():
         canvases = get_canvas_data(token, cookie)
     except HTTPError as e:
         if e.response.status_code == 401:
-            st.markdown(f"Get new token [from switchboard](https://www.switchboard.ai/s/canvas)")
+            st.markdown("Get new token [from switchboard](https://www.switchboard.ai/s/canvas)")
             text = st.text_input('token')
             if st.button('Submit'):
                 print("text", text)
