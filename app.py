@@ -113,7 +113,7 @@ def display_text_containers(canvas: Canvas):
 
     new_canvas = deepcopy(canvas)
     for old_component, new_component in zip(canvas.text_components, new_canvas.text_components):
-        cols = st.columns(5)
+        cols = st.columns(4)
         with cols[0]:
             st.text(old_component.name)
         with cols[1]:
@@ -133,8 +133,6 @@ def display_text_containers(canvas: Canvas):
                                       options,
                                       index=index,
                                       key=f'{old_component.name}_text_color_type-{canvas.name}')
-        with cols[4]:
-            new_component.optional = st.checkbox('optional', value=old_component.optional, key=f'{old_component.name}_optional-{canvas.name}')
 
     if new_canvas != canvas:
         reload_image(new_canvas)
