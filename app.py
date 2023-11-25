@@ -102,6 +102,8 @@ def clickable_image(image_url, target_url, image_size=100):
 
 
 def get_filler_text(value, max_characters):
+    if value is None:
+        return IPSEM_TEXT[:max_characters]
     value = value[:max_characters]
     if len(value) < max_characters:
         value += IPSEM_TEXT[:max_characters - len(value)]
@@ -166,7 +168,7 @@ def fill_canvas_and_update_thumbnail(canvas: Canvas):
 
 def fill_canvas(canvas: Canvas, fill_values: Dict[str, str]):
     # TODO
-    text_content = {x.name: get_filler_text(fill_values['text_content'][x.name], x.max_characters)
+    text_content = {x.name: get_filler_text(fill_values['text_content'].get(x.name), x.max_characters)
                     for x in canvas.text_components}
     payload = {
         'canvas_name': canvas.name,
