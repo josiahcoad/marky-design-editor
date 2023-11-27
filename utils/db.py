@@ -11,6 +11,7 @@ DDB_RESOURCE = boto3.resource('dynamodb')
 
 def put_canvas(canvas: Canvas):
     put(CANVAS_TABLE_NAME, canvas.model_dump())
+    put('canvas-dev', canvas.model_dump())
 
 def list_canvases():
     return [Canvas(**x) for x in list_all(CANVAS_TABLE_NAME)]
@@ -24,6 +25,7 @@ def put_storage(key, value):
 
 def put_theme(item):
     put(THEMES_TABLE_NAME, item)
+    put('themes-dev', item)
 
 
 def get_storage(key):
