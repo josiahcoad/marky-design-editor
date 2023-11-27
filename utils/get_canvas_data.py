@@ -38,7 +38,7 @@ def get_canvas_data(sb_token, sb_cookie):
             print(thumbnail_url)
 
         db_canvas: dict = db_data[name].model_dump() if name in db_data else {}
-        theme = db_canvas.get('theme', {})
+        theme = db_canvas.get('theme', None)
         notes = db_canvas.get('notes', '')
         approved = db_canvas.get('approved', False)
         db_components = {x['name']: x for x in db_canvas.get('components', {})}
