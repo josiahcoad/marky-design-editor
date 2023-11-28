@@ -341,10 +341,11 @@ with st.sidebar:
         st.session_state[GLOBAL_NOTES_ST_KEY] = new_global_notes
 
 
-load = 50
+st.session_state['num_templates_shown'] = st.session_state.get('num_templates_shown', 50)
+
 if len(df) == 0:
     st.write('No templates found matching filters')
-for name in df.head(load).sort_index().index:
+for name in df.head(st.session_state['num_templates_shown']).sort_index().index:
     canvas = canvases[name]
     cols = st.columns(4)
     with cols[0]:
@@ -373,7 +374,7 @@ for name in df.head(load).sort_index().index:
         display_text_containers(canvas)
 
 
-if load < len(df):
+if st.session_state['num_templates_shown'] < len(df):
     if st.button('Load More'):
-        load += 50
+        st.session_state['num_templates_shown'] += 50
         st.rerun()
