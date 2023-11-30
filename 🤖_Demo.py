@@ -60,6 +60,9 @@ async def generate_post(session, business_context, knowledge, language, canvas_n
     async with session.post(f"{DEV_URL}/v1/posts/controlled",
                             json=payload,
                             headers={'Authorization': f'Bearer {DEV_API_TOKEN}'}) as response:
+        if response.status != 200:
+            st.write(await response.text())
+            st.stop()
         response = await response.json()
         media_urls, caption, components = response['media_urls'], response['caption'], response['components']
         image_url = list(media_urls.values())[0]
