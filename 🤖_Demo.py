@@ -64,8 +64,7 @@ async def generate_post(session, business_context, knowledge, language, canvas_n
         response = await response.json()
         media_urls, caption, components = response['media_urls'], response['caption'], response['components']
         image_url = list(media_urls.values())[0]
-        return image_url, caption, components
-    
+        return {'image_url': image_url, 'caption': caption, 'components': components}
 
 
 async def permutate(business_context, knowledge, language, canvases, prompts, topics, ctas, intentions,
@@ -181,8 +180,10 @@ with st.expander("⚙️ Generation Settings"):
 generate_enabled = all([business_context, language, canvas_names, prompts, topics, ctas, intentions, selected_pallets])
 if st.button("Generate", disabled=not generate_enabled):
     batch = 10
-    permutations = asyncio.run(permutate(business_context, knowledge, language, canvas_names, prompts, topics, ctas,
-                                         intentions, caption_length_min, caption_length_max, selected_pallets))
+    with st.spinner("Generating..."):
+        permutations = asyncio.run(permutate(business_context, knowledge, language, canvas_names, prompts, topics, ctas,
+                                            intentions, caption_length_min, caption_length_max, selected_pallets))
+
     for i, post in enumerate(permutations):
         cols = st.columns([4, 6])
         with cols[0]:
