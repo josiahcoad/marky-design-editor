@@ -23,6 +23,7 @@ class TextMeta(BaseModel):
     all_caps: bool = False
     color_type: str = TextColorType.DONT_CHANGE
     optional: bool = False
+    instructions: str = ""
 
 
 class CanvasComponent(BaseModel):
@@ -118,6 +119,7 @@ class Canvas(BaseDBModel):
     name: str
     components: Components
     thumbnail_url: str
+    thumbnail_url_2: Optional[str] = None
     theme: Optional[str] = None
     approved: bool = False
     notes: Optional[str] = None

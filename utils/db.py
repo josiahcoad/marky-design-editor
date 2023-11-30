@@ -5,18 +5,32 @@ from utils.dto import Canvas
 CANVAS_TABLE_NAME = 'canvas-prod'
 THEMES_TABLE_NAME = 'themes-prod'
 STORAGE_TABLE_NAME = 'internal-design-editor'
+PROMPT_TABLE_NAME = 'prompts-dev'
+BUSINESS_TABLE_NAME = 'books-prod'
 
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 DDB_RESOURCE = boto3.resource('dynamodb')
 
 def put_canvas(canvas: Canvas):
     put(CANVAS_TABLE_NAME, canvas.model_dump())
+    put('canvas-dev', canvas.model_dump())
+
 
 def list_canvases():
     return [Canvas(**x) for x in list_all(CANVAS_TABLE_NAME)]
 
+
+def list_prompts():
+    return list_all(PROMPT_TABLE_NAME)
+
+
+def list_businesses():
+    return list_all(BUSINESS_TABLE_NAME)
+
+
 def list_themes():
     return list_all(THEMES_TABLE_NAME)
+
 
 def put_storage(key, value):
     put(STORAGE_TABLE_NAME, {'key': key, 'value': value})
@@ -24,6 +38,7 @@ def put_storage(key, value):
 
 def put_theme(item):
     put(THEMES_TABLE_NAME, item)
+    put('themes-dev', item)
 
 
 def get_storage(key):

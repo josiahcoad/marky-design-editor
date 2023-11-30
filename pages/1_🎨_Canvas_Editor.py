@@ -10,6 +10,7 @@ import utils.db as db
 from utils.get_canvas_data import get_canvas_data
 from utils.s3utils import upload_image_to_s3
 
+st.set_page_config(layout='wide', page_title="Canvas Editor", page_icon="🎨")
 
 LOGO_URLS = {
     'Logo 1': 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg',
@@ -35,6 +36,8 @@ TEXT_CONTENT = {
 
 IPSEM_TEXT = "This Python package runs a Markov chain algorithm over the surviving works of the Roman historian Tacitus to generate naturalistic-looking pseudo-Latin gibberish. Useful when you need to generate dummy text as a placeholder in templates, etc. Brigantes femina duce exurere coloniam, expugnare castra, ac nisi felicitas in tali"
 
+BUSINESS_NAMES = ['Business 1', 'Business 2']
+
 SB_TOKEN_ST_KEY = 'sb_token'
 SB_COOKIE_ST_KEY = 'sb_cookie'
 FILL_VALUES_ST_KEY = 'fill_values'
@@ -45,20 +48,6 @@ DEV_URL = 'https://psuf5gocxc.execute-api.us-east-1.amazonaws.com/api'
 DEV_API_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNTI1YzdmNC00ZTM5LTQ0N2ItODRlMy0xZWE5OWI3ZjA5MGYiLCJpYXQiOjE2OTUwOTQ0ODYsIm5iZiI6MTY5NTA5NDQ4NiwiZXhwIjoxNzI2NjMwNDg2fQ.G-e-NnDenhLs6HsM6ymLfQz_lTHTo8RX4oZB9I5hJI0' # admin@admin.com
 
 SB_TEMPLATE_EDITOR_URL_PREFIX = "https://www.switchboard.ai/s/canvas/editor/"
-
-if not st.session_state.get(FILL_VALUES_ST_KEY):
-    st.session_state[FILL_VALUES_ST_KEY] = (db.get_storage(FILL_VALUES_ST_KEY) or {
-        'background_image_url': list(BACKGROUND_URLS.values())[0],
-        'logo_url': list(LOGO_URLS.values())[0],
-        'background_color': "#ecc9bf",
-        'accent_color': "#cf3a72", # pink
-        'text_color': "#064e84", # blue
-        'text_content': TEXT_CONTENT,
-        'font_url': None,
-    })
-    db.put_storage(FILL_VALUES_ST_KEY, st.session_state[FILL_VALUES_ST_KEY])
-
-
 
 
 def refresh():
@@ -119,7 +108,7 @@ def display_text_containers(canvas: Canvas):
 
     new_canvas = deepcopy(canvas)
     for old_component, new_component in zip(canvas.text_components, new_canvas.text_components):
-        cols = st.columns(4)
+        cols = st.columns(5)
         with cols[0]:
             st.text(old_component.name)
         with cols[1]:
@@ -139,6 +128,10 @@ def display_text_containers(canvas: Canvas):
                                       options,
                                       index=index,
                                       key=f'{old_component.name}_text_color_type-{canvas.name}')
+        with cols[4]:
+            new_component.instructions = st.text_input('custom instructions',
+                                                       value=old_component.instructions,
+                                                       key=f'{old_component.name}_instructions-{canvas.name}')
 
     if new_canvas != canvas:
         reload_image(new_canvas)
@@ -149,7 +142,10 @@ def reload_image(canvas: Canvas):
     db.put_canvas(canvas)
 
     with st.spinner("Wait for it..."):
-        fill_canvas_and_update_thumbnail(canvas)
+        if canvas.theme == 'meme':
+            regenerate_meme(canvas)
+        else:
+            fill_canvas_and_update_thumbnail(canvas)
 
 
 fill_canvas_error = st.session_state.get('fill_canvas_error')
@@ -158,16 +154,67 @@ if fill_canvas_error:
     st.stop()
 
 
+import concurrent.futures
+
 def fill_canvas_and_update_thumbnail(canvas: Canvas):
     st.toast(f"Requesting new image for {canvas.name}...")
-    image_url = fill_canvas(canvas, st.session_state[FILL_VALUES_ST_KEY])
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        business_name = BUSINESS_NAMES[0]
+        future1 = executor.submit(fill_canvas, canvas, st.session_state[f"{FILL_VALUES_ST_KEY}-{business_name}"])
+        
+        business_name_2 = BUSINESS_NAMES[1]
+        future2 = executor.submit(fill_canvas, canvas, st.session_state[f"{FILL_VALUES_ST_KEY}-{business_name_2}"])
+
+    image_url = future1.result()
     if image_url:
         upload_image_to_s3(image_url, canvas.name + '.png')
         canvas.thumbnail_url = image_url
         st.session_state['canvases'][canvas.name] = canvas
-        st.rerun()
     else:
         st.error("Error filling canvas!")
+
+    image_url_2 = future2.result()
+    upload_image_to_s3(image_url_2, canvas.name + "_2" + '.png')
+    canvas.thumbnail_url_2 = image_url_2
+    st.session_state['canvases'][canvas.name] = canvas
+
+    st.rerun()
+
+
+def regenerate_meme(canvas: Canvas):
+    payload = {
+        # template settings
+        'canvas_names': [canvas.name],
+        # content settings
+        'business_context': "We create custom mugs using a process that only takes 5 minutes.",
+        'topic': "5 minute mugs",
+        'knowledge': "phone: 125-6767-1716",
+        'prompt': "",
+        'intention': "entertain",
+        'cta': "buy mug",
+        'approximate_caption_length_chars': 300,
+        'language': "English",
+        'caption_suffix': "",
+        # brand_settings
+        'brand_color_hex': '#FFFFFF',
+        'background_color_hex': '#FFFFFF',
+        'text_color_hex': '#FFFFFF',
+        'logo_url': None,
+        'font_url': None
+    }
+    response = requests.post(f"{DEV_URL}/v1/posts/controlled",
+                             json=payload,
+                             headers={'Authorization': f'Bearer {DEV_API_TOKEN}'},
+                             ).json()
+    media_urls = response['media_urls']
+    image_url = list(media_urls.values())[0]
+
+    upload_image_to_s3(image_url, canvas.name + '.png')
+    canvas.thumbnail_url = image_url
+    st.session_state['canvases'][canvas.name] = canvas
+
+    st.rerun()
+
 
 
 def fill_canvas(canvas: Canvas, fill_values: Dict[str, str]):
@@ -217,7 +264,7 @@ def display_action_bar(canvas: Canvas):
         # If in edit mode, display the text area
         if st.session_state.get(edit_key, False):
             edited_notes = st.text_area('Notes', value=notes, key=f'notes-{template_name}')
-            if st.button('Save', key=f'save-{template_name}'):
+            if notes != edited_notes:
                 canvas.notes = edited_notes
                 db.put_canvas(canvas)
                 st.session_state['canvases'][template_name] = canvas
@@ -227,13 +274,70 @@ def display_action_bar(canvas: Canvas):
                 st.rerun()
         # Display notes if not in edit mode and notes exist
         elif notes:
-            st.text(f'Notes: {notes}')
+            st.text(notes)
 
 
 canvases = st.session_state.get('canvases')
 if not canvases:
     canvases = get_canvases()
     st.session_state['canvases'] = canvases
+
+
+def get_fill_values(business_name):
+    storage_key = f"{FILL_VALUES_ST_KEY}-{business_name}"
+    if not st.session_state.get(storage_key):
+        st.session_state[storage_key] = (db.get_storage(storage_key) or {
+            'background_image_url': list(BACKGROUND_URLS.values())[0],
+            'logo_url': list(LOGO_URLS.values())[0],
+            'background_color': "#ecc9bf",
+            'accent_color': "#cf3a72", # pink
+            'text_color': "#064e84", # blue
+            'text_content': TEXT_CONTENT,
+            'font_url': None,
+        })
+        db.put_storage(storage_key, st.session_state[storage_key])
+    return st.session_state[storage_key]
+
+
+def edit_business_pane(business_name):
+    with st.expander(f"Edit {business_name}"):
+        storage_key = f"{FILL_VALUES_ST_KEY}-{business_name}"
+        fill_values = get_fill_values(business_name)
+        new_fill_values = {}
+        old_index = list(BACKGROUND_URLS.values()).index(fill_values['background_image_url'])
+        background_choice = st.radio('Select a background image:',
+                                    ('Image 1', 'Image 2', 'Image 3'),
+                                    index=old_index,
+                                    key=f'background_choice-{business_name}')
+        assert background_choice is not None
+        new_fill_values['background_image_url'] = BACKGROUND_URLS[background_choice]
+        st.image(new_fill_values['background_image_url'], width=300)
+
+        old_index = list(LOGO_URLS.values()).index(fill_values['logo_url']) if 'logo_url' in fill_values else 0
+        logo_choice = st.radio('Select a logo:', ('Logo 1', 'Logo 2', 'Logo 3'), index=old_index,
+                               key=f'logo_choice-{business_name}')
+        assert logo_choice is not None
+        new_fill_values['logo_url'] = LOGO_URLS[logo_choice]
+        st.image(new_fill_values['logo_url'], width=100)
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            new_fill_values['background_color'] = st.color_picker('Background', value=fill_values['background_color'],
+                                                                  key=f'background_color-{business_name}')
+        with col2:
+            new_fill_values['accent_color'] = st.color_picker('Accent', value=fill_values['accent_color'],
+                                                                  key=f'accent_color-{business_name}')
+        with col3:
+            new_fill_values['text_color'] = st.color_picker('Text', value=fill_values['text_color'],
+                                                                  key=f'text_color-{business_name}')
+
+        new_fill_values['text_content'] = {key: st.text_area(key, value=value, key=f'{key}-{business_name}')
+                                        for key, value in fill_values['text_content'].items()}
+
+        values_changed = new_fill_values != fill_values
+        if values_changed:
+            db.put_storage(storage_key, new_fill_values)
+            st.session_state[storage_key] = new_fill_values
 
 
 def sidebar():
@@ -247,11 +351,7 @@ def sidebar():
 
     with st.sidebar:
         theme_names = list(df.theme.unique()) + ['All']
-        color_editable = {name: get_themes().get(name, {}).get('color_editable', False) for name in theme_names}
-        theme = st.selectbox('Theme',
-                            options=theme_names,
-                            index=theme_names.index(theme_choice),
-                            format_func=lambda x: f'{x} {"(color)" if color_editable[x] else ""}')
+        theme = st.selectbox('Theme', options=theme_names, index=theme_names.index(theme_choice))
         if theme != st.session_state[THEME_CHOICE_ST_KEY]:
             st.session_state[THEME_CHOICE_ST_KEY] = theme
             db.put_storage(THEME_CHOICE_ST_KEY, theme)
@@ -277,46 +377,8 @@ def sidebar():
 
         image_size = st.slider('Image Size', min_value=100, max_value=300, value=150, step=50)
 
-        # Configuration for values
-        with st.expander('Change Fill Values'):
-            fill_values = st.session_state[FILL_VALUES_ST_KEY]
-            new_fill_values = {}
-            old_index = list(BACKGROUND_URLS.values()).index(fill_values['background_image_url'])
-            background_choice = st.radio('Select a background image:',
-                                        ('Image 1', 'Image 2', 'Image 3'),
-                                        index=old_index,
-                                        key='background_choice')
-            assert background_choice is not None
-            new_fill_values['background_image_url'] = BACKGROUND_URLS[background_choice]
-            st.image(new_fill_values['background_image_url'], width=300)
-
-            old_index = list(LOGO_URLS.values()).index(fill_values['logo_url']) if 'logo_url' in fill_values else 0
-            logo_choice = st.radio('Select a logo:', ('Logo 1', 'Logo 2', 'Logo 3'), index=old_index, key='logo_choice')
-            assert logo_choice is not None
-            new_fill_values['logo_url'] = LOGO_URLS[logo_choice]
-            st.image(new_fill_values['logo_url'], width=100)
-
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                new_fill_values['background_color'] = st.color_picker('Background', value=fill_values['background_color'], key='background_color')
-            with col2:
-                new_fill_values['accent_color'] = st.color_picker('Accent', value=fill_values['accent_color'], key='accent_color')
-            with col3:
-                new_fill_values['text_color'] = st.color_picker('Text', value=fill_values['text_color'], key='text_color')
-
-            new_fill_values['text_content'] = {key: st.text_area(key, value=value, key=key)
-                                            for key, value in fill_values['text_content'].items()}
-
-            values_changed = new_fill_values != fill_values
-            if values_changed:
-                db.put_storage(FILL_VALUES_ST_KEY, new_fill_values)
-                st.session_state[FILL_VALUES_ST_KEY] = new_fill_values
-
-        if theme:
-            if st.button(f"Mark '{theme}' {'uncolored' if color_editable[theme] else 'colored'}", key=f"mark-{theme}"):
-                theme['color_editable'] = not color_editable[theme]
-                db.put_theme(theme)
-                refresh()
+        edit_business_pane(BUSINESS_NAMES[0])
+        edit_business_pane(BUSINESS_NAMES[1])
 
         if st.button("Pull Switchboard Changes"):
             refresh()
@@ -339,7 +401,7 @@ def sidebar():
 
 
 def main_table(df, image_size):
-    theme_names = [x['name'] for x in get_themes()]
+    theme_names = list(get_themes().keys())
     load = 50
     if len(df) == 0:
         st.write('No templates found matching filters')
@@ -349,12 +411,17 @@ def main_table(df, image_size):
         with cols[0]:
             st.image(canvas.thumbnail_url, width=image_size)
         with cols[1]:
+            if canvas.theme != 'meme':
+                if thumbnail_url := canvas.thumbnail_url_2:
+                    st.image(thumbnail_url, width=image_size)
+                else:
+                    st.write("click refresh")
+        with cols[2]:
             approval_status = st.checkbox('Approved', value=canvas.approved, key=f'approval_status-{canvas.name}')
             if bool(approval_status) != bool(canvas.approved): # ie status changed
                 canvas.approved = approval_status
                 db.put_canvas(canvas)
                 st.session_state['canvases'][canvas.name] = canvas
-        with cols[2]:
             theme = st.selectbox('theme', options=theme_names, index=theme_names.index(canvas.theme), key=f'theme-{canvas.name}')
             if theme != canvas.theme:
                 canvas.theme = theme
@@ -378,6 +445,5 @@ def main_table(df, image_size):
             st.rerun()
 
 
-def main():
-    df, image_size = sidebar()
-    main_table(df, image_size)
+df, image_size = sidebar()
+main_table(df, image_size)
