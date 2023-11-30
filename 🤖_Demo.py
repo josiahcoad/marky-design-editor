@@ -157,16 +157,25 @@ topic_chosen = st.selectbox(label="Or choose one of the AI generated topics",
 topic = topic_entered or topic_chosen
 topics = [topic]
 
-
+canvas_options = list(canvases.keys())
 with st.expander("⚙️ Generation Settings"):
+    cta_options = businesses[business].get('ctas') or ["Call", "Visit", "Buy"]
+    if st.button('Randomize'):
+        random.shuffle(prompts)
+        random.shuffle(cta_options)
+        random.shuffle(canvas_options)
+
     business_context = st.text_area("Business Context", value=format_business_context(businesses[business]))
     knowledge = st.text_area("Knowledge", value=format_knowledge(businesses[business]))
     language = st.selectbox("Language", ["English", "Spanish"], index=0)
-    canvas_names = st.multiselect("Canvas", canvases.keys(), default=random.choice(list(canvases.keys())))
+    canvas_names = st.multiselect("Canvas", canvases.keys(), default=canvas_options[:5])
+    cols = st.columns(len(canvas_names))
+    for i, canvas_name in enumerate(canvas_names):
+        with cols[i]:
+            st.image(canvases[canvas_name].thumbnail_url, use_column_width="auto")
     # img = image_select("Label", ["image1.png", "image2.png", "image3.png"])
-    prompts = st.multiselect("Template", prompts, default=random.choice(prompts))
-    cta_options = businesses[business].get('ctas') or ["Call", "Visit", "Buy"]
-    ctas = st.multiselect("CTA", cta_options, default=random.choice(cta_options))
+    selected_prompts = st.multiselect("Template", prompts, default=prompts[:5])
+    ctas = st.multiselect("CTA", cta_options, cta_options[:1])
     intentions = st.multiselect("Post Intention", ["Sell", "Inform", "Entertain"], default="Entertain")
     caption_length_min = st.slider("Caption Length Min", 100, 1000, 200, 100)
     caption_length_max = st.slider("Caption Length Max", 100, 1000, 500, 100)
@@ -176,7 +185,7 @@ with st.expander("⚙️ Generation Settings"):
     selected_pallets = [pallets[name] for name in selected_pallete_names]
 
 
-generate_enabled = all([business_context, language, canvas_names, prompts, topics, ctas, intentions, selected_pallets])
+generate_enabled = all([business_context, language, canvas_names, selected_prompts, topics, ctas, intentions, selected_pallets])
 if st.button("Generate", disabled=not generate_enabled):
     batch = 10
     with st.spinner("Generating..."):
