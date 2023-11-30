@@ -3,3 +3,5 @@ boto3
 Pillow
 pydantic
 streamlit-image-select
+aiohttp
+asyncio

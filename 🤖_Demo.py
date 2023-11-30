@@ -1,6 +1,8 @@
+import aiohttp
+import asyncio
 import random
-import requests
 import streamlit as st
+from streamlit_image_select import image_select
 
 from utils.db import list_businesses, list_canvases, list_prompts
 
@@ -35,7 +37,7 @@ def clickable_image(image_url, target_url, image_size=100):
     st.image(image_url, width=image_size)
 
 
-def generate_post(business_context, knowledge, language, canvas_name, prompt, topic, cta, intention, caption_length, color_pallete):
+async def generate_post(session, business_context, knowledge, language, canvas_name, prompt, topic, cta, intention, caption_length, color_pallete):
     payload = {
         # template settings
         'canvas_names': [canvas_name],
@@ -56,40 +58,32 @@ def generate_post(business_context, knowledge, language, canvas_name, prompt, to
         'logo_url': None,
         'font_url': None
     }
-    response = requests.post(f"{DEV_URL}/v1/posts/controlled",
-                             json=payload,
-                             headers={'Authorization': f'Bearer {DEV_API_TOKEN}'},
-                             ).json()
-    print(response)
-    media_urls, caption, components = response['media_urls'], response['caption'], response['components']
-    image_url = list(media_urls.values())[0]
-    return image_url, caption, components
+    async with session.post(f"{DEV_URL}/v1/posts/controlled",
+                            json=payload,
+                            headers={'Authorization': f'Bearer {DEV_API_TOKEN}'}) as response:
+        response = await response.json()
+        media_urls, caption, components = response['media_urls'], response['caption'], response['components']
+        image_url = list(media_urls.values())[0]
+        return image_url, caption, components
+    
 
 
+async def permutate(business_context, knowledge, language, canvases, prompts, topics, ctas, intentions, caption_length_min, caption_length_max, color_palletes):
+    tasks = []
+    async with aiohttp.ClientSession() as session:
+        for canvas in canvases:
+            for prompt in prompts:
+                for topic in topics:
+                    for cta in ctas:
+                        for intention in intentions:
+                            for color_pallete in color_palletes:
+                                caption_length = random.randint(caption_length_min, caption_length_max)
+                                task = generate_post(session, business_context, knowledge, language, canvas, prompt, topic, cta, intention, caption_length, color_pallete)
+                                tasks.append(task)
+        results = await asyncio.gather(*tasks)
+    return results
 
 
-def permutate(business_context, knowledge, language, canvases, prompts, topics, ctas, intentions, caption_length_min, caption_length_max, color_palletes):
-    for canvas in canvases:
-        for prompt in prompts:
-            for topic in topics:
-                for cta in ctas:
-                    for intention in intentions:
-                        for color_pallete in color_palletes:
-                            caption_length = random.randint(caption_length_min, caption_length_max)
-                            with st.spinner("Generating..."):
-                                image_url, caption, canvas_components = generate_post(business_context, knowledge, language, canvas, prompt, topic, cta, intention, caption_length, color_pallete)
-                            yield {
-                                "canvas": canvas,
-                                "prompt": prompt,
-                                "topic": topic,
-                                "cta": cta,
-                                "intention": intention,
-                                "caption_length": caption_length,
-                                "color_pallete": color_pallete,
-                                "image_url": image_url,
-                                "caption": caption,
-                                "canvas_components": canvas_components,
-                            }
 
 def pallete_picker(pallete_name, init_background, init_accent, init_text):
     st.subheader(pallete_name)
@@ -188,7 +182,7 @@ if st.button("Generate", disabled=not generate_enabled):
     for i, post in enumerate(permutate(business_context, knowledge, language, canvas_names, prompts, topics, ctas, intentions, caption_length_min, caption_length_max, selected_pallets)):
         cols = st.columns([4, 6])
         with cols[0]:
-            clickable_image(post['image_url'], SB_TEMPLATE_EDITOR_URL_PREFIX + canvases[post['canvas']]['id'])
+            clickable_image(post['image_url'], SB_TEMPLATE_EDITOR_URL_PREFIX + canvases[post['canvas']].id)
             st.write(post['caption'])
         with cols[1]:
             st.write("caption_length: ", post['caption_length'])
