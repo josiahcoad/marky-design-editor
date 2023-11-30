@@ -68,7 +68,8 @@ async def generate_post(session, business_context, knowledge, language, canvas_n
     
 
 
-async def permutate(business_context, knowledge, language, canvases, prompts, topics, ctas, intentions, caption_length_min, caption_length_max, color_palletes):
+async def permutate(business_context, knowledge, language, canvases, prompts, topics, ctas, intentions,
+                    caption_length_min, caption_length_max, color_palletes):
     tasks = []
     async with aiohttp.ClientSession() as session:
         for canvas in canvases:
@@ -78,7 +79,8 @@ async def permutate(business_context, knowledge, language, canvases, prompts, to
                         for intention in intentions:
                             for color_pallete in color_palletes:
                                 caption_length = random.randint(caption_length_min, caption_length_max)
-                                task = generate_post(session, business_context, knowledge, language, canvas, prompt, topic, cta, intention, caption_length, color_pallete)
+                                task = generate_post(session, business_context, knowledge, language, canvas, prompt,
+                                                     topic, cta, intention, caption_length, color_pallete)
                                 tasks.append(task)
         results = await asyncio.gather(*tasks)
     return results
@@ -179,7 +181,9 @@ with st.expander("⚙️ Generation Settings"):
 generate_enabled = all([business_context, language, canvas_names, prompts, topics, ctas, intentions, selected_pallets])
 if st.button("Generate", disabled=not generate_enabled):
     batch = 10
-    for i, post in enumerate(permutate(business_context, knowledge, language, canvas_names, prompts, topics, ctas, intentions, caption_length_min, caption_length_max, selected_pallets)):
+    permutations = asyncio.run(permutate(business_context, knowledge, language, canvas_names, prompts, topics, ctas,
+                                         intentions, caption_length_min, caption_length_max, selected_pallets))
+    for i, post in enumerate(permutations):
         cols = st.columns([4, 6])
         with cols[0]:
             clickable_image(post['image_url'], SB_TEMPLATE_EDITOR_URL_PREFIX + canvases[post['canvas']].id)
