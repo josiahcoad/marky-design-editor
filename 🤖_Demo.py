@@ -171,7 +171,7 @@ with st.expander("⚙️ Generation Settings"):
     caption_length_max = st.slider("Caption Length Max", 100, 1000, 500, 100)
     pallets = pallete_generator()
     pallete_names = pallets.keys()
-    selected_pallete_names = st.multiselect("Color Pallete", pallete_names)
+    selected_pallete_names = st.multiselect("Color Pallete", pallete_names, default=pallete_names[0])
     selected_pallets = [pallets[name] for name in selected_pallete_names]
 
 
