@@ -6,7 +6,7 @@ from streamlit_image_select import image_select
 
 from utils.db import list_businesses, list_canvases, list_prompts
 
-DEV_URL = 'https://psuf5gocxc.execute-api.us-east-1.amazonaws.com/api'
+DEV_URL = 'http://localhost:8000'# 'https://psuf5gocxc.execute-api.us-east-1.amazonaws.com/api'
 DEV_API_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNTI1YzdmNC00ZTM5LTQ0N2ItODRlMy0xZWE5OWI3ZjA5MGYiLCJpYXQiOjE2OTUwOTQ0ODYsIm5iZiI6MTY5NTA5NDQ4NiwiZXhwIjoxNzI2NjMwNDg2fQ.G-e-NnDenhLs6HsM6ymLfQz_lTHTo8RX4oZB9I5hJI0' # admin@admin.com
 SB_TEMPLATE_EDITOR_URL_PREFIX = "https://www.switchboard.ai/s/canvas/editor/"
 
@@ -36,32 +36,45 @@ def clickable_image(image_url, target_url, image_size=100):
     st.markdown(markdown, unsafe_allow_html=True)
 
 
-async def generate_post(session, business_context, knowledge, language, canvas_name, prompt, topic, cta, intention, caption_length, color_pallete):
-    payload = {
-        # template settings
-        'canvas_names': [canvas_name],
-        # content settings
-        'business_context': business_context,
-        'topic': topic,
-        'knowledge': knowledge,
-        'prompt': prompt,
-        'intention': intention,
-        'cta': cta,
-        'approximate_caption_length_chars': caption_length,
-        'language': language,
-        'caption_suffix': "",
-        # brand_settings
-        'brand_color_hex': color_pallete['brand'],
-        'background_color_hex': color_pallete['background'],
-        'text_color_hex': color_pallete['text'],
-        'logo_url': None,
-        'font_url': None
-    }
+def generate_payloads(business_context, knowledge, language, canvas_names, prompts, topics, ctas, intentions, caption_length_min, caption_length_max, color_palletes):
+    payloads = []
+    for canvas_name in canvas_names:
+        for prompt in prompts:
+            for topic in topics:
+                for cta in ctas:
+                    for intention in intentions:
+                        for color_pallete in color_palletes:
+                            caption_length = random.randint(caption_length_min, caption_length_max)
+                            payload = {
+                                # template settings
+                                'canvas_names': [canvas_name],
+                                # content settings
+                                'business_context': business_context,
+                                'topic': topic,
+                                'knowledge': knowledge,
+                                'prompt': prompt,
+                                'intention': intention,
+                                'cta': cta,
+                                'approximate_caption_length_chars': caption_length,
+                                'language': language,
+                                'caption_suffix': "",
+                                # brand_settings
+                                'brand_color_hex': color_pallete['brand'],
+                                'background_color_hex': color_pallete['background'],
+                                'text_color_hex': color_pallete['text'],
+                                'logo_url': None,
+                                'font_url': None
+                            }
+                            payloads.append(payload)
+    return payloads
+
+
+async def generate_post(session, payload):
     async with session.post(f"{DEV_URL}/v1/posts/controlled",
                             json=payload,
                             headers={'Authorization': f'Bearer {DEV_API_TOKEN}'}) as response:
         if response.status != 200:
-            st.write(await response.text())
+            st.error(await response.text())
             st.stop()
         response = await response.json()
         media_urls, caption, components = response['media_urls'], response['caption'], response['components']
@@ -69,23 +82,14 @@ async def generate_post(session, business_context, knowledge, language, canvas_n
         return {'image_url': image_url, 'caption': caption, 'components': components, **payload}
 
 
-async def permutate(business_context, knowledge, language, canvases, prompts, topics, ctas, intentions,
-                    caption_length_min, caption_length_max, color_palletes):
+async def make_posts(payloads):
     tasks = []
     async with aiohttp.ClientSession() as session:
-        for canvas in canvases:
-            for prompt in prompts:
-                for topic in topics:
-                    for cta in ctas:
-                        for intention in intentions:
-                            for color_pallete in color_palletes:
-                                caption_length = random.randint(caption_length_min, caption_length_max)
-                                task = generate_post(session, business_context, knowledge, language, canvas, prompt,
-                                                     topic, cta, intention, caption_length, color_pallete)
-                                tasks.append(task)
+        for payload in payloads:
+            task = generate_post(session, payload)
+            tasks.append(task)
         results = await asyncio.gather(*tasks)
     return results
-
 
 
 def pallete_picker(pallete_name, init_background, init_accent, init_text):
@@ -171,13 +175,13 @@ with st.expander("⚙️ Generation Settings"):
     business_context = st.text_area("Business Context", value=format_business_context(businesses[business]))
     knowledge = st.text_area("Knowledge", value=format_knowledge(businesses[business]))
     language = st.selectbox("Language", ["English", "Spanish"], index=0)
-    canvas_names = st.multiselect("Canvas", canvases.keys(), default=canvas_options[:5])
+    canvas_names = st.multiselect("Canvas", canvases.keys(), default=canvas_options[:2])
     cols = st.columns(len(canvas_names))
     for i, canvas_name in enumerate(canvas_names):
         with cols[i]:
             st.image(canvases[canvas_name].thumbnail_url, use_column_width="auto")
     # img = image_select("Label", ["image1.png", "image2.png", "image3.png"])
-    selected_prompts = st.multiselect("Template", prompts, default=prompts[:5])
+    selected_prompts = st.multiselect("Template", prompts, default=prompts[:2])
     ctas = st.multiselect("CTA", cta_options, cta_options[:1])
     intentions = st.multiselect("Post Intention", ["Sell", "Inform", "Entertain"], default="Entertain")
     caption_length_min = st.slider("Caption Length Min", 100, 1000, 200, 100)
@@ -188,18 +192,22 @@ with st.expander("⚙️ Generation Settings"):
     selected_pallets = [pallets[name] for name in selected_pallete_names]
 
 
-generate_enabled = all([business_context, language, canvas_names, selected_prompts, topics, ctas, intentions, selected_pallets])
+generate_enabled = all([business_context, language, canvas_names, selected_prompts, topic, ctas, intentions, selected_pallets])
 if st.button("Generate", disabled=not generate_enabled):
     batch = 10
-    with st.spinner("Generating..."):
-        permutations = asyncio.run(permutate(business_context, knowledge, language, canvas_names, prompts, topics, ctas,
-                                            intentions, caption_length_min, caption_length_max, selected_pallets))
+    payloads = generate_payloads(business_context, knowledge, language, canvas_names, selected_prompts, topics, ctas,
+                                 intentions, caption_length_min, caption_length_max, selected_pallets)
+    if len(payloads) > 10:
+        st.text(f"Cutting you off at {len(payloads)}/10 posts...")
 
-    for i, post in enumerate(permutations):
+    with st.spinner(f"Generating {len(payloads)} posts..."):
+        results = asyncio.run(make_posts(payloads[:10]))
+
+    for i, post in enumerate(results):
         canvas_name = post['canvas_names'][0]
         cols = st.columns([4, 6])
         with cols[0]:
-            clickable_image(post['image_url'], SB_TEMPLATE_EDITOR_URL_PREFIX + canvases[canvas_name].id, 400)
+            clickable_image(post['image_url'], SB_TEMPLATE_EDITOR_URL_PREFIX + canvases[canvas_name].id, 300)
             st.write(post['caption'])
         with cols[1]:
             st.write("caption_length: ", post['approximate_caption_length_chars'])
