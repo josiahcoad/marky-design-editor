@@ -6,6 +6,7 @@ from utils.db import list_businesses, list_canvases, list_prompts
 
 DEV_URL = 'https://psuf5gocxc.execute-api.us-east-1.amazonaws.com/api'
 DEV_API_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNTI1YzdmNC00ZTM5LTQ0N2ItODRlMy0xZWE5OWI3ZjA5MGYiLCJpYXQiOjE2OTUwOTQ0ODYsIm5iZiI6MTY5NTA5NDQ4NiwiZXhwIjoxNzI2NjMwNDg2fQ.G-e-NnDenhLs6HsM6ymLfQz_lTHTo8RX4oZB9I5hJI0' # admin@admin.com
+SB_TEMPLATE_EDITOR_URL_PREFIX = "https://www.switchboard.ai/s/canvas/editor/"
 
 st.set_page_config(layout='wide', page_title="Demo", page_icon="🤖")
 
@@ -26,6 +27,12 @@ def get_canvases():
 def get_prompts():
     prompts = list_prompts()
     return [x['prompt'] for x in prompts]
+
+
+def clickable_image(image_url, target_url, image_size=100):
+    markdown = f'<a href="{target_url}" target="_blank"><img src="{image_url}" width="{image_size}" height="{image_size}"></a>'
+    st.markdown(markdown, unsafe_allow_html=True)
+    st.image(image_url, width=image_size)
 
 
 def generate_post(business_context, knowledge, language, canvas_name, prompt, topic, cta, intention, caption_length, color_pallete):
@@ -161,7 +168,7 @@ with st.expander("⚙️ Generation Settings"):
     business_context = st.text_area("Business Context", value=format_business_context(businesses[business]))
     knowledge = st.text_area("Knowledge", value=format_knowledge(businesses[business]))
     language = st.selectbox("Language", ["English", "Spanish"], index=0)
-    canvases = st.multiselect("Canvas", canvases.keys(), default=random.choice(list(canvases.keys())))
+    canvas_names = st.multiselect("Canvas", canvases.keys(), default=random.choice(list(canvases.keys())))
     # img = image_select("Label", ["image1.png", "image2.png", "image3.png"])
     prompts = st.multiselect("Template", prompts, default=random.choice(prompts))
     cta_options = businesses[business].get('ctas') or ["Call", "Visit", "Buy"]
@@ -175,13 +182,13 @@ with st.expander("⚙️ Generation Settings"):
     selected_pallets = [pallets[name] for name in selected_pallete_names]
 
 
-generate_enabled = all([business_context, language, canvases, prompts, topics, ctas, intentions, selected_pallets])
+generate_enabled = all([business_context, language, canvas_names, prompts, topics, ctas, intentions, selected_pallets])
 if st.button("Generate", disabled=not generate_enabled):
     batch = 10
-    for i, post in enumerate(permutate(business_context, knowledge, language, canvases, prompts, topics, ctas, intentions, caption_length_min, caption_length_max, selected_pallets)):
+    for i, post in enumerate(permutate(business_context, knowledge, language, canvas_names, prompts, topics, ctas, intentions, caption_length_min, caption_length_max, selected_pallets)):
         cols = st.columns([4, 6])
         with cols[0]:
-            st.image(post['image_url'])
+            clickable_image(post['image_url'], SB_TEMPLATE_EDITOR_URL_PREFIX + canvases[post['canvas']]['id'])
             st.write(post['caption'])
         with cols[1]:
             st.write("caption_length: ", post['caption_length'])
