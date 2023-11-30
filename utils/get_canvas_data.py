@@ -34,8 +34,7 @@ def get_canvas_data(sb_token, sb_cookie):
         name = config.pop('template')['name']
         sb_components = list(config.values())
         thumbnail_url = my_thumbnails.get(sb_template['apiName'], sb_template['thumbnailUrl'])
-        if sb_template['apiName'] == 'tech-template-1':
-            print(thumbnail_url)
+        thumbnail_url_2 = my_thumbnails.get(sb_template['apiName'] + "_2")
 
         db_canvas: dict = db_data[name].model_dump() if name in db_data else {}
         theme = db_canvas.get('theme', None)
@@ -51,6 +50,7 @@ def get_canvas_data(sb_token, sb_cookie):
                         name=name,
                         components=components,
                         thumbnail_url=thumbnail_url,
+                        thumbnail_url_2=thumbnail_url_2,
                         theme=theme,
                         notes=notes,
                         approved=approved)
