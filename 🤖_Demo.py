@@ -4,7 +4,7 @@ import streamlit as st
 
 from utils.db import list_businesses, list_canvases, list_prompts
 
-DEV_URL = 'http://localhost:8000'
+DEV_URL = 'https://psuf5gocxc.execute-api.us-east-1.amazonaws.com/api'
 DEV_API_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNTI1YzdmNC00ZTM5LTQ0N2ItODRlMy0xZWE5OWI3ZjA5MGYiLCJpYXQiOjE2OTUwOTQ0ODYsIm5iZiI6MTY5NTA5NDQ4NiwiZXhwIjoxNzI2NjMwNDg2fQ.G-e-NnDenhLs6HsM6ymLfQz_lTHTo8RX4oZB9I5hJI0' # admin@admin.com
 
 st.set_page_config(layout='wide', page_title="Demo", page_icon="🤖")
@@ -160,11 +160,12 @@ topics = [topic]
 with st.expander("⚙️ Generation Settings"):
     business_context = st.text_area("Business Context", value=format_business_context(businesses[business]))
     knowledge = st.text_area("Knowledge", value=format_knowledge(businesses[business]))
-    language = st.selectbox("Language", ["English", "Spanish"])
-    canvases = st.multiselect("Canvas", canvases.keys())
-    prompts = st.multiselect("Template", prompts)
-    ctas = st.multiselect("CTA", businesses[business].get('ctas') or ["Call", "Visit", "Buy"])
-    intentions = st.multiselect("Post Intention", ["Sell", "Inform", "Entertain"])
+    language = st.selectbox("Language", ["English", "Spanish"], default="English")
+    canvases = st.multiselect("Canvas", canvases.keys(), default=random.choice(canvases.keys()))
+    prompts = st.multiselect("Template", prompts, default=random.choice(prompts))
+    cta_options = businesses[business].get('ctas') or ["Call", "Visit", "Buy"]
+    ctas = st.multiselect("CTA", cta_options, default=random.choice(cta_options))
+    intentions = st.multiselect("Post Intention", ["Sell", "Inform", "Entertain"], default="Entertain")
     caption_length_min = st.slider("Caption Length Min", 100, 1000, 200, 100)
     caption_length_max = st.slider("Caption Length Max", 100, 1000, 500, 100)
     pallets = pallete_generator()
