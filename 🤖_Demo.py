@@ -187,7 +187,7 @@ if st.button("Generate", disabled=not generate_enabled):
         canvas_name = post['canvas_names'][0]
         cols = st.columns([4, 6])
         with cols[0]:
-            clickable_image(post['image_url'], SB_TEMPLATE_EDITOR_URL_PREFIX + canvases[canvas_name].id)
+            clickable_image(post['image_url'], SB_TEMPLATE_EDITOR_URL_PREFIX + canvases[canvas_name].id, 400)
             st.write(post['caption'])
         with cols[1]:
             st.write("caption_length: ", post['approximate_caption_length_chars'])
