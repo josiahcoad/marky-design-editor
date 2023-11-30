@@ -45,8 +45,7 @@ class CanvasComponent(BaseModel):
             try:
                 color_editable = sb_component['url']['file'].get('filename', '').endswith('svg') and sb_component['imageSvgFill']
             except:
-                print(sb_component)
-                raise
+                color_editable = False                
             if color_editable:
                 return ShapeComponent(name=name)
             return ImageComponent(name=name)
