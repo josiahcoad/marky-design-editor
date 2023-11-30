@@ -6,7 +6,7 @@ from streamlit_image_select import image_select
 
 from utils.db import list_businesses, list_canvases, list_prompts
 
-DEV_URL = 'http://localhost:8000'# 'https://psuf5gocxc.execute-api.us-east-1.amazonaws.com/api'
+DEV_URL = 'https://psuf5gocxc.execute-api.us-east-1.amazonaws.com/api'
 DEV_API_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNTI1YzdmNC00ZTM5LTQ0N2ItODRlMy0xZWE5OWI3ZjA5MGYiLCJpYXQiOjE2OTUwOTQ0ODYsIm5iZiI6MTY5NTA5NDQ4NiwiZXhwIjoxNzI2NjMwNDg2fQ.G-e-NnDenhLs6HsM6ymLfQz_lTHTo8RX4oZB9I5hJI0' # admin@admin.com
 SB_TEMPLATE_EDITOR_URL_PREFIX = "https://www.switchboard.ai/s/canvas/editor/"
 
