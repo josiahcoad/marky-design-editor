@@ -64,7 +64,7 @@ async def generate_post(session, business_context, knowledge, language, canvas_n
         response = await response.json()
         media_urls, caption, components = response['media_urls'], response['caption'], response['components']
         image_url = list(media_urls.values())[0]
-        return {'image_url': image_url, 'caption': caption, 'components': components}
+        return {'image_url': image_url, 'caption': caption, 'components': components, **payload}
 
 
 async def permutate(business_context, knowledge, language, canvases, prompts, topics, ctas, intentions,
@@ -185,14 +185,15 @@ if st.button("Generate", disabled=not generate_enabled):
                                             intentions, caption_length_min, caption_length_max, selected_pallets))
 
     for i, post in enumerate(permutations):
+        canvas_name = post['canvas_names'][0]
         cols = st.columns([4, 6])
         with cols[0]:
-            clickable_image(post['image_url'], SB_TEMPLATE_EDITOR_URL_PREFIX + canvases[post['canvas']].id)
+            clickable_image(post['image_url'], SB_TEMPLATE_EDITOR_URL_PREFIX + canvases[canvas_name].id)
             st.write(post['caption'])
         with cols[1]:
-            st.write("caption_length: ", post['caption_length'])
+            st.write("caption_length: ", post['approximate_caption_length_chars'])
             st.write("intention: ", post['intention'])
-            st.write("canvas: ", post['canvas'])
+            st.write("canvas: ", canvas_name)
             st.write("cta: ", post['cta'])
             st.write("topic: ", post['topic'])
             st.write("prompt: ", post['prompt'])
