@@ -160,8 +160,9 @@ topics = [topic]
 with st.expander("⚙️ Generation Settings"):
     business_context = st.text_area("Business Context", value=format_business_context(businesses[business]))
     knowledge = st.text_area("Knowledge", value=format_knowledge(businesses[business]))
-    language = st.selectbox("Language", ["English", "Spanish"], default="English")
+    language = st.selectbox("Language", ["English", "Spanish"], index=0)
     canvases = st.multiselect("Canvas", canvases.keys(), default=random.choice(canvases.keys()))
+    # img = image_select("Label", ["image1.png", "image2.png", "image3.png"])
     prompts = st.multiselect("Template", prompts, default=random.choice(prompts))
     cta_options = businesses[business].get('ctas') or ["Call", "Visit", "Buy"]
     ctas = st.multiselect("CTA", cta_options, default=random.choice(cta_options))
