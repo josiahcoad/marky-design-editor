@@ -117,9 +117,9 @@ with col1:
 
 #     if st.button('Add'):
 #         db.put_prompt(new_template)
-
+with col2:
     if st.button('Delete'):
-        db.delete_prompt(new_template)
+        db.delete_prompt(post_template)
 
 
 CANVAS_COMPONENTS_KEY = 'canvas-components'
