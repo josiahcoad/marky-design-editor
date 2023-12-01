@@ -6,7 +6,6 @@ import warnings
 import requests
 
 OPENAI_COMPLETIONS_API_URL = 'https://api.openai.com/v1/chat/completions'
-OPENAI_KEY = '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'
 
 
 def prompt_gpt_json(prompt, creativity=0.5, model: Literal[3, 4] = 4):
