@@ -29,8 +29,8 @@ def put_prompt(item):
 
 
 def delete_prompt(item):
-    delete(PROMPT_TABLE_NAME, 'id', item)
-    delete('prompts-dev', 'id', item)
+    delete(PROMPT_TABLE_NAME, 'id', item['id'])
+    delete('prompts-dev', 'id', item['id'])
 
 
 def list_businesses():
