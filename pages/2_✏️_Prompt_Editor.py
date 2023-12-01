@@ -1,4 +1,6 @@
+from datetime import datetime
 import json
+import uuid
 import requests
 import streamlit as st
 
@@ -115,9 +117,9 @@ with col1:
         edited_prompt['prompt'] = new_template
         db.put_prompt(edited_prompt)
 
-#     if st.button('Add'):
-#         db.put_prompt(new_template)
 with col2:
+    if st.button('Create New'):
+        db.put_prompt({'id': str(uuid.uuid4()), 'created_at': datetime.now().isoformat(), 'prompt': new_template})
     if st.button('Delete'):
         db.delete_prompt(post_template)
 
