@@ -116,6 +116,7 @@ with col1:
         edited_prompt = next((x for x in prompts if x['prompt'] == post_template))
         edited_prompt['prompt'] = new_template
         db.put_prompt(edited_prompt)
+        st.success('Template Updated')
 
 with col2:
     if st.button('Create New'):
@@ -155,8 +156,8 @@ final_prompt = new_master_prompt.format(
     sections=sections,
     language=language
 )
-st.subheader("Filled in Prompt")
-st.text(final_prompt)
+with st.expander("Filled in Prompt"):
+    st.text(final_prompt)
 
 
 import aiohttp
