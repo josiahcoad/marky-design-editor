@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from typing import Literal
 import warnings
@@ -28,7 +29,7 @@ def prompt_gpt(prompt, creativity=0.5, model: Literal[3, 4] = 4, json_output: bo
         payload['response_format'] = {'type': 'json_object'}
 
     headers = {
-        "Authorization": f"Bearer {OPENAI_KEY}",
+        "Authorization": f"Bearer {os.environ['OPENAI_KEY']}",
         "Content-Type": "application/json"
     }
 
