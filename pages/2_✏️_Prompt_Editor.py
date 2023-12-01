@@ -112,10 +112,13 @@ with col1:
     new_template = st.text_area('(Optional) Edit Template', value=post_template)
 
 # with col2:
-#     if st.button('Save As Updated Template'):
+#     if st.button('Update'):
 #         db.put_prompt(new_template)
 
-#     if st.button('Save As New Template'):
+#     if st.button('Add'):
+#         db.put_prompt(new_template)
+
+#     if st.button('Delete'):
 #         db.put_prompt(new_template)
 
 
@@ -174,4 +177,4 @@ payload = {
 if st.button('Run Prompt'):
     with st.spinner('Wait for it...'):
         response = prompt_gpt_json(final_prompt, creativity=0.9, model=4)
-    st.text(json.dumps(response, indent=4, ensure_ascii=False))
+    st.text_area(json.dumps(response, indent=4, ensure_ascii=False), height=800, disabled=True)
