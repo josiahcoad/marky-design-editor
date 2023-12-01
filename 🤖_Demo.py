@@ -3,6 +3,7 @@ import asyncio
 import random
 import streamlit as st
 from streamlit_image_select import image_select
+from utils.business_formaters import format_business_context, format_topic, format_facts
 
 from utils.db import list_businesses, list_canvases, list_prompts
 
@@ -16,7 +17,7 @@ st.set_page_config(layout='wide', page_title="Demo", page_icon="🤖")
 @st.cache_data
 def get_businesses():
     businesses = list_businesses()
-    return {x['title']: x for x in businesses}
+    return {x['title']: x for x in businesses if x.get('testimonials')}
 
 
 @st.cache_data
@@ -36,7 +37,7 @@ def clickable_image(image_url, target_url, image_size=100):
     st.markdown(markdown, unsafe_allow_html=True)
 
 
-def generate_payloads(business_context, knowledge, language, canvas_names, prompts, topics, ctas, intentions, caption_length_min, caption_length_max, color_palletes):
+def generate_payloads(business_context, facts, language, canvas_names, prompts, topics, ctas, intentions, caption_length_min, caption_length_max, color_palletes):
     payloads = []
     for canvas_name in canvas_names:
         for prompt in prompts:
@@ -51,7 +52,7 @@ def generate_payloads(business_context, knowledge, language, canvas_names, promp
                                 # content settings
                                 'business_context': business_context,
                                 'topic': topic,
-                                'knowledge': knowledge,
+                                'knowledge': facts,
                                 'prompt': prompt,
                                 'intention': intention,
                                 'cta': cta,
@@ -113,46 +114,6 @@ def pallete_generator():
     return pallets
 
 
-def format_business_context(business: dict):
-    context = ""
-    if title := business.get('title'):
-        context += f"- Business: {title}\n"
-    if industry := business.get('industry'):
-        context += f"- Industry: {industry}\n"
-    if niche := business.get('niche'):
-        context += f"- Niche: {niche}\n"
-    if tone := business.get('tone'):
-        context += f"- Tone: {tone}\n"
-    if core_values := business.get('core_values'):
-        context += f"- Core values: {core_values}\n"
-    if audience := business.get('audience'):
-        context += f"- Customers: {audience}\n"
-    if pain_points := business.get('pain_points'):
-        context += f"- Customers pain points: {pain_points}\n"
-    if objectives := business.get('objectives'):
-        context += f"- Customers objectives: {objectives}\n"
-
-    return context
-
-def format_knowledge(business: dict):
-    knowledge = ""
-    if testimonials := business.get('testimonials'):
-        knowledge += f"- testimonials: {random.choice(testimonials)}\n"
-    if events := business.get('events'):
-        knowledge += f"- events: {random.choice(events)}\n"
-    if contact_phone := business.get('contact_phone'):
-        knowledge += f"- contact phone: {contact_phone}\n"
-    if contact_email := business.get('contact_email'):
-        knowledge += f"- contact email: {contact_email}\n"
-    if website := business.get('website'):
-        knowledge += f"- website: {website}\n"
-
-    return knowledge
-
-
-def format_topic(content_topic: dict):
-    return f"{content_topic.get('title')} -- {content_topic.get('summary')}"
-
 businesses = get_businesses()
 canvases = get_canvases()
 prompts = get_prompts()
@@ -164,6 +125,8 @@ topic_chosen = st.selectbox(label="Or choose one of the AI generated topics",
 topic = topic_entered or topic_chosen
 topics = [topic]
 
+selected_options = st.session_state.get('selected_options', {})
+
 canvas_options = list(canvases.keys())
 with st.expander("⚙️ Generation Settings"):
     cta_options = businesses[business].get('ctas') or ["Call", "Visit", "Buy"]
@@ -173,7 +136,7 @@ with st.expander("⚙️ Generation Settings"):
         random.shuffle(canvas_options)
 
     business_context = st.text_area("Business Context", value=format_business_context(businesses[business]))
-    knowledge = st.text_area("Knowledge", value=format_knowledge(businesses[business]))
+    facts = st.text_area("Facts", value=format_facts(businesses[business]))
     language = st.selectbox("Language", ["English", "Spanish"], index=0)
     canvas_names = st.multiselect("Canvas", canvases.keys(), default=canvas_options[:2])
     cols = st.columns(len(canvas_names))
@@ -195,7 +158,7 @@ with st.expander("⚙️ Generation Settings"):
 generate_enabled = all([business_context, language, canvas_names, selected_prompts, topic, ctas, intentions, selected_pallets])
 if st.button("Generate", disabled=not generate_enabled):
     batch = 10
-    payloads = generate_payloads(business_context, knowledge, language, canvas_names, selected_prompts, topics, ctas,
+    payloads = generate_payloads(business_context, facts, language, canvas_names, selected_prompts, topics, ctas,
                                  intentions, caption_length_min, caption_length_max, selected_pallets)
     if len(payloads) > 10:
         st.text(f"Cutting you off at {len(payloads)}/10 posts...")
