@@ -177,4 +177,5 @@ payload = {
 if st.button('Run Prompt'):
     with st.spinner('Wait for it...'):
         response = prompt_gpt_json(final_prompt, creativity=0.9, model=4)
-    st.text_area("Response", json.dumps(response, indent=4, ensure_ascii=False), height=800, disabled=True)
+    sections = [f'__{key}__\n{value}' for key, value in response.items()]
+    st.text_area("Response", '\n\n'.join(sections), height=800)
