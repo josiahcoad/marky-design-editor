@@ -5,7 +5,7 @@ from utils.dto import Canvas
 CANVAS_TABLE_NAME = 'canvas-prod'
 THEMES_TABLE_NAME = 'themes-prod'
 STORAGE_TABLE_NAME = 'internal-design-editor'
-PROMPT_TABLE_NAME = 'prompts-dev'
+PROMPT_TABLE_NAME = 'prompts-prod'
 BUSINESS_TABLE_NAME = 'books-prod'
 
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
@@ -21,6 +21,16 @@ def list_canvases():
 
 def list_prompts():
     return list_all(PROMPT_TABLE_NAME)
+
+
+def put_prompt(item):
+    put(PROMPT_TABLE_NAME, item)
+    put('prompts-dev', item)
+
+
+def delete_prompt(item):
+    delete(PROMPT_TABLE_NAME, 'id', item)
+    delete('prompts-dev', 'id', item)
 
 
 def list_businesses():
@@ -73,3 +83,7 @@ def delete_all(table_name, key_name):
     with table.batch_writer() as batch:
         for item in items:
             batch.delete_item(Key={key_name: item[key_name]})
+
+def delete(table_name, key_name, key_value):
+    table = DDB_RESOURCE.Table(table_name)
+    table.delete_item(Key={key_name: key_value})

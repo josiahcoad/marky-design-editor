@@ -28,8 +28,7 @@ def get_businesses():
 
 @st.cache_data
 def get_prompts():
-    prompts = list_prompts()
-    return [x['prompt'] for x in prompts]
+    return list_prompts()
 
 
 MASTER_PROMPT_KEY = 'master-prompt'
@@ -105,21 +104,22 @@ intention = st.selectbox('Intention', ['Inspire', 'Inform', 'Entertain', 'Sell']
 
 topic = st.selectbox('Topic', [format_topic(x) for x in businesses[business_name].get('chapters', [])])
 
-post_template = st.selectbox('Post Template', get_prompts())
+prompts = get_prompts()
+post_template = st.selectbox('Post Template', prompts.keys())
 
 col1, col2 = st.columns([7, 3])
 with col1:
     new_template = st.text_area('(Optional) Edit Template', value=post_template)
-
-# with col2:
-#     if st.button('Update'):
-#         db.put_prompt(new_template)
+    if new_template != post_template:
+        edited_prompt = next((x for x in prompts if x['prompt'] == post_template))
+        edited_prompt['prompt'] = new_template
+        db.put_prompt(edited_prompt)
 
 #     if st.button('Add'):
 #         db.put_prompt(new_template)
 
-#     if st.button('Delete'):
-#         db.put_prompt(new_template)
+    if st.button('Delete'):
+        db.delete_prompt(new_template)
 
 
 CANVAS_COMPONENTS_KEY = 'canvas-components'
