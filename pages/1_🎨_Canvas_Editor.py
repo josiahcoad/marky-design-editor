@@ -1,5 +1,7 @@
 from copy import deepcopy
+from datetime import datetime
 from typing import Dict
+import uuid
 import pandas as pd
 
 from requests import HTTPError
@@ -386,11 +388,16 @@ def sidebar():
 
         st.info("⬆️ Run whenever you add a component or change it's name")
 
-        # if st.button("Push to Prod"):
-        #     db.delete_all('themes-prod', 'name')
-        #     db.put_all('themes-prod', db.list_themes())
-        #     db.delete_all('canvas-prod', 'name')
-        #     db.put_all('canvas-prod', db.list_canvases())
+        with st.expander('Create Theme'):
+            name = st.text_input('Name')
+            theme_canvases_chosen = st.multiselect('Canvases', options=list(canvases.keys()))
+            if st.button('Create', disabled=not (name and theme_canvases_chosen)):
+                for c in theme_canvases_chosen:
+                    canvases[c].theme = name
+                    db.put_canvas(canvases[c])
+                    st.session_state['canvases'][c] = canvases[c]
+                db.put_theme({'id': str(uuid.uuid4()), 'created_at': datetime.utcnow().isoformat(), 'name': name})
+                refresh()
 
         global_notes = st.session_state.get(GLOBAL_NOTES_ST_KEY) or db.get_storage(GLOBAL_NOTES_ST_KEY)
         new_global_notes = st.text_area('Global Notes', value=global_notes, height=500)
