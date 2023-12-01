@@ -393,7 +393,8 @@ def sidebar():
 
         with st.expander('Create Theme'):
             name = st.text_input('Name')
-            theme_canvases_chosen = st.multiselect('Canvases', options=list(canvases.keys()))
+            theme_canvases_chosen = st.multiselect('Canvases',
+                                                   options=[x.name for x in canvases.values() if x.theme is None])
             if st.button('Create', disabled=not (name and theme_canvases_chosen)):
                 with st.spinner("Wait for it..."):
                     for c in theme_canvases_chosen:
