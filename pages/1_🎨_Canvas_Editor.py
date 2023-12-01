@@ -351,7 +351,8 @@ def sidebar():
 
     with st.sidebar:
         theme_names = list(df.theme.unique()) + ['All']
-        theme = st.selectbox('Theme', options=theme_names, index=theme_names.index(theme_choice))
+        index_choice_index = theme_names.index(theme_choice) if theme_choice in theme_names else 0
+        theme = st.selectbox('Theme', options=theme_names, index=index_choice_index)
         if theme != st.session_state[THEME_CHOICE_ST_KEY]:
             st.session_state[THEME_CHOICE_ST_KEY] = theme
             db.put_storage(THEME_CHOICE_ST_KEY, theme)
