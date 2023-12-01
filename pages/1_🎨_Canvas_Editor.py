@@ -360,7 +360,10 @@ def sidebar():
             db.put_storage(THEME_CHOICE_ST_KEY, theme)
 
         if theme != 'All':
-            df = df[df.theme == theme]
+            if theme is None:
+                df = df[df.theme.isna()]
+            else:
+                df = df[df.theme == theme]
         with st.expander('More Filters'):
             search_template_name = st.text_input('Search Template Name')
             if search_template_name:
