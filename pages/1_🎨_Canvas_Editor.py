@@ -392,25 +392,16 @@ def sidebar():
         st.info("⬆️ Run whenever you add a component or change it's name")
 
         with st.expander('Create Theme'):
-            # Use session state for the widget values
-            if 'create_theme_name' not in st.session_state:
-                st.session_state['create_theme_name'] = ''
-            if 'theme_canvases_chosen' not in st.session_state:
-                st.session_state['theme_canvases_chosen'] = []
-
-            st.session_state['create_theme_name'] = st.text_input('Name', value=st.session_state['create_theme_name'])
-            st.session_state['theme_canvases_chosen'] = st.multiselect('Canvases', options=list(canvases.keys()), default=st.session_state['theme_canvases_chosen'])
-
-            if st.button('Create', disabled=not (st.session_state['create_theme_name'] and st.session_state['theme_canvases_chosen'])):
+            name = st.text_input('Name')
+            theme_canvases_chosen = st.multiselect('Canvases', options=list(canvases.keys()))
+            if st.button('Create', disabled=not (name and theme_canvases_chosen)):
                 with st.spinner("Wait for it..."):
-                    for c in st.session_state['theme_canvases_chosen']:
-                        canvases[c].theme = st.session_state['create_theme_name']
+                    for c in theme_canvases_chosen:
+                        canvases[c].theme = name
                         db.put_canvas(canvases[c])
                         st.session_state['canvases'][c] = canvases[c]
-                    db.put_theme({'id': str(uuid.uuid4()), 'created_at': datetime.utcnow().isoformat(), 'name': st.session_state['create_theme_name']})
-                st.session_state['create_theme_name'] = ''
-                st.session_state['theme_canvases_chosen'] = []
-                refresh()
+                    db.put_theme({'id': str(uuid.uuid4()), 'created_at': datetime.utcnow().isoformat(), 'name': name})
+                    refresh()
 
         global_notes = st.session_state.get(GLOBAL_NOTES_ST_KEY) or db.get_storage(GLOBAL_NOTES_ST_KEY)
         new_global_notes = st.text_area('Global Notes', value=global_notes, height=500)
