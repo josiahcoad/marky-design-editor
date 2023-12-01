@@ -99,10 +99,9 @@ business_names = list(businesses.keys())
 business_name = st.selectbox('Business', business_names)
 facts = st.text_area('Facts', value=format_facts(businesses[business_name]))
 context = st.text_area('Business Context', value=format_business_context(businesses[business_name]))
+cta = st.selectbox('CTA', businesses[business_name].get('ctas') or ["Call", "Visit", "Buy"])
 
 intention = st.selectbox('Intention', ['Inspire', 'Inform', 'Entertain', 'Sell'])
-
-cta = st.selectbox('CTA', businesses[business_name].get('ctas') or ["Call", "Visit", "Buy"])
 
 topic = st.selectbox('Topic', [format_topic(x) for x in businesses[business_name].get('chapters', [])])
 
@@ -112,12 +111,12 @@ col1, col2 = st.columns([7, 3])
 with col1:
     new_template = st.text_area('(Optional) Edit Template', value=post_template)
 
-with col2:
-    if st.button('Save As Updated Template'):
-        db.put_prompt(new_template)
+# with col2:
+#     if st.button('Save As Updated Template'):
+#         db.put_prompt(new_template)
 
-    if st.button('Save As New Template'):
-        db.put_prompt(new_template)
+#     if st.button('Save As New Template'):
+#         db.put_prompt(new_template)
 
 
 CANVAS_COMPONENTS_KEY = 'canvas-components'
@@ -174,5 +173,5 @@ payload = {
 
 if st.button('Run Prompt'):
     with st.spinner('Wait for it...'):
-        response = prompt_gpt_json(final_prompt, creativity=0.1, model=4)
+        response = prompt_gpt_json(final_prompt, creativity=0.9, model=4)
     st.text(json.dumps(response, indent=4, ensure_ascii=False))
