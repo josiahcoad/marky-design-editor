@@ -105,7 +105,7 @@ intention = st.selectbox('Intention', ['Inspire', 'Inform', 'Entertain', 'Sell']
 topic = st.selectbox('Topic', [format_topic(x) for x in businesses[business_name].get('chapters', [])])
 
 prompts = get_prompts()
-post_template = st.selectbox('Post Template', [x['name'] for x in prompts])
+post_template = st.selectbox('Post Template', [x['prompt'] for x in prompts])
 
 col1, col2 = st.columns([7, 3])
 with col1:
