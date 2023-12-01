@@ -199,6 +199,7 @@ if st.button("Generate", disabled=not generate_enabled):
                                  intentions, caption_length_min, caption_length_max, selected_pallets)
     if len(payloads) > 10:
         st.text(f"Cutting you off at {len(payloads)}/10 posts...")
+        payloads = payloads[:10]
 
     with st.spinner(f"Generating {len(payloads)} posts..."):
         results = asyncio.run(make_posts(payloads[:10]))
