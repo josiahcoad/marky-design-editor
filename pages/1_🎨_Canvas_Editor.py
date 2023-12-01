@@ -412,7 +412,7 @@ def sidebar():
 
 
 def main_table(df, image_size):
-    theme_names = list(get_themes().keys())
+    theme_names = list(get_themes().keys()) + [None]
     load = 50
     if len(df) == 0:
         st.write('No templates found matching filters')
