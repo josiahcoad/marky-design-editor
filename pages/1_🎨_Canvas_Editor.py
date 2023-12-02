@@ -231,7 +231,7 @@ async def fill_canvas_make_request_async(session, payload):
     async with session.post(DEV_URL + '/v1/posts/fill-canvas',
                             json=payload,
                             headers={'Authorization': f'Bearer {DEV_API_TOKEN}'}) as response:
-        return await response.json()['image_url']
+        return (await response.json())['image_url']
 
 
 def fill_canvas_prepare_payload(canvas: Canvas, fill_values: Dict[str, str]):
@@ -250,8 +250,6 @@ def fill_canvas_make_request(payload):
                              json=payload,
                              headers={'Authorization': f'Bearer {DEV_API_TOKEN}'})
     return response
-
-
 
 
 def display_action_bar(canvas: Canvas):
