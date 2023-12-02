@@ -1,6 +1,6 @@
 from copy import deepcopy
 from datetime import datetime
-from typing import Dict
+from typing import Dict, List
 import uuid
 import pandas as pd
 
@@ -11,6 +11,9 @@ from utils.dto import Canvas
 import utils.db as db
 from utils.get_canvas_data import get_canvas_data
 from utils.s3utils import upload_image_to_s3
+
+import aiohttp
+import asyncio
 
 st.set_page_config(layout='wide', page_title="Canvas Editor", page_icon="🎨")
 
@@ -156,31 +159,25 @@ if fill_canvas_error:
     st.stop()
 
 
-import concurrent.futures
-
 def fill_canvas_and_update_thumbnail(canvas: Canvas):
     st.toast(f"Requesting new image for {canvas.name}...")
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        business_name = BUSINESS_NAMES[0]
-        future1 = executor.submit(fill_canvas, canvas, st.session_state[f"{FILL_VALUES_ST_KEY}-{business_name}"])
-        
-        business_name_2 = BUSINESS_NAMES[1]
-        future2 = executor.submit(fill_canvas, canvas, st.session_state[f"{FILL_VALUES_ST_KEY}-{business_name_2}"])
-
-    image_url = future1.result()
+    fill_values_list = [st.session_state[f"{FILL_VALUES_ST_KEY}-{name}"] for name in BUSINESS_NAMES]
+    canvases = [canvas, canvas]
+    image_urls = asyncio.run(fill_canvases_async(canvases, fill_values_list))
+    image_url, image_url_2 = image_urls
     if image_url:
         upload_image_to_s3(image_url, canvas.name + '.png')
         canvas.thumbnail_url = image_url
         st.session_state['canvases'][canvas.name] = canvas
     else:
-        st.error("Error filling canvas!")
+        st.session_state['fill_canvas_error'] = "Error filling canvas!"
 
-    image_url_2 = future2.result()
     if image_url_2:
         upload_image_to_s3(image_url_2, canvas.name + "_2" + '.png')
         canvas.thumbnail_url_2 = image_url_2
         st.session_state['canvases'][canvas.name] = canvas
-
+    else:
+        st.session_state['fill_canvas_error'] = "Error filling canvas 2!"
     st.rerun()
 
 
@@ -219,9 +216,25 @@ def regenerate_meme(canvas: Canvas):
     st.rerun()
 
 
+async def fill_canvases_async(canvases: List[Canvas], fill_values_list: List[Dict[str, str]]):
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for canvas, fill_values in zip(canvases, fill_values_list):
+            payload = fill_canvas_prepare_payload(canvas, fill_values)
+            task = asyncio.ensure_future(fill_canvas_make_request_async(session, payload))
+            tasks.append(task)
+        responses = await asyncio.gather(*tasks)
+    return [fill_canvas_process_response(response) for response in responses]
 
-def fill_canvas(canvas: Canvas, fill_values: Dict[str, str]):
-    # TODO
+
+async def fill_canvas_make_request_async(session, payload):
+    async with session.post(DEV_URL + '/v1/posts/fill-canvas',
+                            json=payload,
+                            headers={'Authorization': f'Bearer {DEV_API_TOKEN}'}) as response:
+        return await response.json()
+
+
+def fill_canvas_prepare_payload(canvas: Canvas, fill_values: Dict[str, str]):
     text_content = {x.name: get_filler_text(fill_values['text_content'].get(x.name), x.max_characters)
                     for x in canvas.text_components}
     payload = {
@@ -229,10 +242,17 @@ def fill_canvas(canvas: Canvas, fill_values: Dict[str, str]):
         **fill_values,
         'text_content': text_content,
     }
+    return payload
 
+
+def fill_canvas_make_request(payload):
     response = requests.post(DEV_URL + '/v1/posts/fill-canvas',
                              json=payload,
                              headers={'Authorization': f'Bearer {DEV_API_TOKEN}'})
+    return response
+
+
+def fill_canvas_process_response(response):
     if not response.ok:
         st.session_state['fill_canvas_error'] = response.text
         st.rerun()
