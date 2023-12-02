@@ -176,9 +176,10 @@ def fill_canvas_and_update_thumbnail(canvas: Canvas):
         st.error("Error filling canvas!")
 
     image_url_2 = future2.result()
-    upload_image_to_s3(image_url_2, canvas.name + "_2" + '.png')
-    canvas.thumbnail_url_2 = image_url_2
-    st.session_state['canvases'][canvas.name] = canvas
+    if image_url_2:
+        upload_image_to_s3(image_url_2, canvas.name + "_2" + '.png')
+        canvas.thumbnail_url_2 = image_url_2
+        st.session_state['canvases'][canvas.name] = canvas
 
     st.rerun()
 
