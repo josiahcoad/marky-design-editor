@@ -223,15 +223,15 @@ async def fill_canvases_async(canvases: List[Canvas], fill_values_list: List[Dic
             payload = fill_canvas_prepare_payload(canvas, fill_values)
             task = asyncio.ensure_future(fill_canvas_make_request_async(session, payload))
             tasks.append(task)
-        image_urls = await asyncio.gather(*tasks)
-    return image_urls
+        responses = await asyncio.gather(*tasks)
+    return [fill_canvas_process_response(response) for response in responses]
 
 
 async def fill_canvas_make_request_async(session, payload):
     async with session.post(DEV_URL + '/v1/posts/fill-canvas',
                             json=payload,
                             headers={'Authorization': f'Bearer {DEV_API_TOKEN}'}) as response:
-        return (await response.json())['image_url']
+        return await response
 
 
 def fill_canvas_prepare_payload(canvas: Canvas, fill_values: Dict[str, str]):
@@ -250,6 +250,14 @@ def fill_canvas_make_request(payload):
                              json=payload,
                              headers={'Authorization': f'Bearer {DEV_API_TOKEN}'})
     return response
+
+
+def fill_canvas_process_response(response):
+    if not response.ok:
+        st.session_state['fill_canvas_error'] = response.text
+        st.rerun()
+        return None
+    return response.json()
 
 
 def display_action_bar(canvas: Canvas):
