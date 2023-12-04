@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+from typing import List
 import uuid
 import requests
 import streamlit as st
@@ -13,6 +14,7 @@ from streamlit_image_select import image_select
 from utils.business_formaters import format_business_context, format_facts
 
 from utils.db import list_businesses, list_canvases, list_prompts
+from utils.dto import TextComponent
 from utils.prompt_gpt import prompt_gpt_json
 
 DEV_URL = 'https://psuf5gocxc.execute-api.us-east-1.amazonaws.com/api'
@@ -30,7 +32,13 @@ def get_businesses():
 
 @st.cache_data
 def get_prompts():
-    return list_prompts()
+    prompts = list_prompts()
+    return {x['id']: x for x in prompts}
+
+prompts = st.session_state.get('prompts')
+if not prompts:
+    prompts = get_prompts()
+    st.session_state['prompts'] = prompts
 
 
 MASTER_PROMPT_KEY = 'master-prompt'
@@ -95,55 +103,93 @@ if new_caption_prompt != caption_prompt:
 
 language = "English"
 
-businesses = get_businesses()
-business_names = list(businesses.keys())
-business_name = st.selectbox('Business', business_names)
-facts = st.text_area('Facts', value=format_facts(businesses[business_name]))
-context = st.text_area('Business Context', value=format_business_context(businesses[business_name]))
-cta = st.selectbox('CTA', businesses[business_name].get('ctas') or ["Call", "Visit", "Buy"])
+with st.expander("Select test business"):
+    businesses = get_businesses()
+    business_names = list(businesses.keys())
+    business_name = st.selectbox('Business', business_names)
+    facts = st.text_area('Facts', value=format_facts(businesses[business_name]))
+    context = st.text_area('Business Context', value=format_business_context(businesses[business_name]))
+    cta = st.selectbox('CTA', businesses[business_name].get('ctas') or ["Call", "Visit", "Buy"])
 
-intention = st.selectbox('Intention', ['Inspire', 'Inform', 'Entertain', 'Sell'])
+    intention = st.selectbox('Intention', ['Inspire', 'Inform', 'Entertain', 'Sell'])
 
-topic = st.selectbox('Topic', [x['body'] for x in businesses[business_name].get('topics', [])])
+    topic = st.selectbox('Topic', [x['body'] for x in businesses[business_name]['topics']])
 
-prompts = get_prompts()
-post_template = st.selectbox('Post Template', [x['prompt'] for x in prompts])
 
+prompt_id = st.selectbox('Post Template', list(st.session_state['prompts'].keys()), format_func=lambda x: st.session_state['prompts'][x]['prompt'])
+chosen_prompt = st.session_state['prompts'][prompt_id]['prompt']
 col1, col2 = st.columns([7, 3])
 with col1:
-    new_template = st.text_area('(Optional) Edit Template', value=post_template)
-    if new_template != post_template:
-        edited_prompt = next((x for x in prompts if x['prompt'] == post_template))
-        edited_prompt['prompt'] = new_template
-        db.put_prompt(edited_prompt)
+    edited_prompt = st.text_area('(Optional) Edit Template', value=st.session_state['prompts'][prompt_id]['prompt'], height=200)
+    if edited_prompt != chosen_prompt:
+        st.session_state['prompts'][prompt_id]['prompt'] = edited_prompt
+        db.put_prompt(st.session_state['prompts'][prompt_id])
         st.success('Template Updated')
+        st.rerun()
 
 with col2:
     if st.button('Create New'):
-        db.put_prompt({'id': str(uuid.uuid4()), 'created_at': datetime.now().isoformat(), 'prompt': new_template})
+        new_prompt_obj = {'id': str(uuid.uuid4()), 'created_at': datetime.now().isoformat(), 'prompt': edited_prompt}
+        db.put_prompt(new_prompt_obj)
+        st.session_state['prompts'][new_prompt_obj['id']] = new_prompt_obj
+        st.rerun()
     if st.button('Delete'):
-        db.delete_prompt(post_template)
+        db.delete_prompt({'id': prompt_id})
+        del st.session_state['prompts'][prompt_id]
+        st.rerun()
 
 
-CANVAS_COMPONENTS_KEY = 'canvas-components'
 default_components = [
     {'name': 'title', 'max_characters': 50, 'instructions': "{title of the post}"},
     {'name': 'content', 'max_characters': 150, 'instructions': "{body of the post}"},
     {'name': 'cta', 'max_characters': 20, 'instructions': "{Call to action}"},
 ]
-caption_component = {'name': 'caption', 'max_characters': 500, 'instructions': new_caption_prompt}
-# canvas_components = st.session_state.get(CANVAS_COMPONENTS_KEY, [])
-# if st.button("Add canvas component"):
-#     canvas_components.append({'title': '', 'instructions': ''})
 
-def format_section(component):
+components = st.session_state.get('text_components') or [
+    TextComponent(name='title', max_characters=50, instructions="{title of the post}"),
+    TextComponent(name='content', max_characters=150, instructions="{body of the post}"),
+    TextComponent(name='cta', max_characters=20, instructions="{Call to action}"),
+]
+
+with st.expander('Text Components'):
+    for component in components:
+        cols = st.columns(4)
+        with cols[0]:
+            st.text(component.name)
+        with cols[1]:
+            component.max_characters = st.number_input('max characters',
+                                                value=component.max_characters,
+                                                key=f'{component.name}_char_count',
+                                                step=10)
+        with cols[2]:
+            component.instructions = st.text_input('custom instructions',
+                                                        value=component.instructions,
+                                                        key=f'{component.name}_instructions')
+        with cols[3]:
+            if st.button('Delete', key=f'{component.name}_delete'):
+                components.remove(component)
+                st.session_state['text_components'] = components
+                st.rerun()
+
+    if st.button('Add Component'):
+        components.append(TextComponent(name=f'new_component-{len(components)}', max_characters=50, instructions=""))
+        st.session_state['text_components'] = components
+        st.rerun()
+
+    st.session_state['text_components'] = components
+
+
+
+caption_component = TextComponent(name='caption', max_characters=500, instructions=new_caption_prompt)
+
+def format_section(component: TextComponent):
     return (f"Section:\n"
-            f"  json key: \"{component['name']}\"\n"
-            f"  max words: {int(component['max_characters'] / 5)}\n"
-            f"  section instructions: {component['instructions']}\n")
+            f"  json key: \"{component.name}\"\n"
+            f"  max words: {int(component.max_characters / 5)}\n"
+            f"  section instructions: {component.instructions}\n")
 
 
-sections = '\n'.join(map(format_section, default_components + [caption_component]))
+sections = '\n'.join(map(format_section, st.session_state['text_components'] + [caption_component]))
 
 
 final_prompt = new_master_prompt.format(
@@ -152,7 +198,7 @@ final_prompt = new_master_prompt.format(
     intention=intention,
     cta=cta,
     knowledge=facts,
-    post_template=post_template,
+    post_template=edited_prompt,
     sections=sections,
     language=language
 )
@@ -164,12 +210,13 @@ import aiohttp
 import asyncio
 
 
+
 payload = {
-    'components': default_components,
+    'components': st.session_state['text_components'],
     'business_context': context,
     'topic': topic,
     'knowledge': facts,
-    'prompt': post_template,
+    'prompt': edited_prompt,
     'intention': intention,
     'cta': cta,
     'approximate_caption_length_chars': 500,
