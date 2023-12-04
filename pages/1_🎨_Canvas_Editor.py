@@ -190,7 +190,7 @@ def regenerate_meme(canvas: Canvas):
                             "Summary: We create custom mugs using a process that only takes 5 minutes."),
         'topic': "5 minute mugs",
         'knowledge': "phone: 125-6767-1716",
-        'prompt': "",
+        'prompt': "Three things I wish I knew when I started my business:\n1. {first thing}\n2. {second thing}\n3. {third thing}",
         'intention': "entertain",
         'cta': "buy mug",
         'approximate_caption_length_chars': 300,
