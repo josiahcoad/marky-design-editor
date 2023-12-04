@@ -197,9 +197,9 @@ def regenerate_meme(canvas: Canvas):
         'language': "English",
         'caption_suffix': "",
         # brand_settings
-        'brand_color_hex': '#FFFFFF',
+        'brand_color_hex': '#2596be',
         'background_color_hex': '#FFFFFF',
-        'text_color_hex': '#FFFFFF',
+        'text_color_hex': '#000000',
         'logo_url': None,
         'font_url': None
     }
