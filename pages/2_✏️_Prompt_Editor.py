@@ -10,7 +10,7 @@ import asyncio
 import random
 import streamlit as st
 from streamlit_image_select import image_select
-from utils.business_formaters import format_business_context, format_topic, format_facts
+from utils.business_formaters import format_business_context, format_facts
 
 from utils.db import list_businesses, list_canvases, list_prompts
 from utils.prompt_gpt import prompt_gpt_json
@@ -104,7 +104,7 @@ cta = st.selectbox('CTA', businesses[business_name].get('ctas') or ["Call", "Vis
 
 intention = st.selectbox('Intention', ['Inspire', 'Inform', 'Entertain', 'Sell'])
 
-topic = st.selectbox('Topic', [format_topic(x) for x in businesses[business_name].get('chapters', [])])
+topic = st.selectbox('Topic', [x['body'] for x in businesses[business_name].get('topics', [])])
 
 prompts = get_prompts()
 post_template = st.selectbox('Post Template', [x['prompt'] for x in prompts])

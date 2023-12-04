@@ -7,6 +7,7 @@ THEMES_TABLE_NAME = 'themes-prod'
 STORAGE_TABLE_NAME = 'internal-design-editor'
 PROMPT_TABLE_NAME = 'prompts-prod'
 BUSINESS_TABLE_NAME = 'books-prod'
+USER_TABLE_NAME = 'users2-prod'
 
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 DDB_RESOURCE = boto3.resource('dynamodb')
@@ -21,6 +22,10 @@ def list_canvases():
 
 def list_prompts():
     return list_all(PROMPT_TABLE_NAME)
+
+
+def list_users():
+    return list_all(USER_TABLE_NAME)
 
 
 def put_prompt(item):

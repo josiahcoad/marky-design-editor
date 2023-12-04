@@ -1,56 +1,28 @@
 from copy import deepcopy
 from datetime import datetime
-from typing import Dict, List
 import uuid
 import pandas as pd
 
 from requests import HTTPError
 import streamlit as st
-import requests
+from utils.api import fill_canvases, SELECTED_PROMPT_ST_KEY
 from utils.dto import Canvas
 import utils.db as db
 from utils.get_canvas_data import get_canvas_data
 from utils.s3utils import upload_image_to_s3
+from utils.db import list_businesses, list_prompts, list_users
+from utils.business_formaters import format_business_context, format_facts
 
-import aiohttp
-import asyncio
 
 st.set_page_config(layout='wide', page_title="Canvas Editor", page_icon="🎨")
 
-LOGO_URLS = {
-    'Logo 1': 'https://marky-image-posts.s3.amazonaws.com/IMG_0526.jpeg',
-    'Logo 2': 'https://marky-image-posts.s3.amazonaws.com/380106565_1398612124371856_5370535347247435473_n.png',
-    'Logo 3': 'https://marky-image-posts.s3.amazonaws.com/pearlite%20emporium%20logo.jpg',
-    'Logo 4': 'https://marky-image-posts.s3.amazonaws.com/OAO_OFFICIAL_LOGO_v2.png',
-    'Logo 5': 'https://marky-image-posts.s3.amazonaws.com/wowbrow%20logo.png',
-}
-
-BACKGROUND_URLS = {
-    'Image 1': "https://images.unsplash.com/photo-1694459471238-6e55eb657848?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwyfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
-    'Image 2': "https://images.unsplash.com/photo-1695331453337-d5f95078f78e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwxfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
-    'Image 3': "https://images.unsplash.com/photo-1694472655814-71e6c5a7ade8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w0MTMwMDZ8MHwxfHNlYXJjaHwzfHxqYWNrZWR8ZW58MHx8fHwxNjk5MDM4ODM0fDA&ixlib=rb-4.0.3&q=85",
-}
-
-TEXT_CONTENT = {
-    'title': "I wish I knew this when I started! It would have saved me a lot of time and money.",
-    'content': "Start with the minimum viable product. Don't try to build the perfect product from the start. If you do, you'll waste a lot of time and money.",
-    'cta': "Get started today! It's free to sign up and you can cancel anytime.",
-    'content1': "Start with the minimum viable product. Don't try to build the perfect product from the start. If you do, you'll waste a lot of time and money.",
-    'content2': "Start with the minimum viable product. Don't try to build the perfect product from the start. If you do, you'll waste a lot of time and money.",
-}
-
-IPSEM_TEXT = "This Python package runs a Markov chain algorithm over the surviving works of the Roman historian Tacitus to generate naturalistic-looking pseudo-Latin gibberish. Useful when you need to generate dummy text as a placeholder in templates, etc. Brigantes femina duce exurere coloniam, expugnare castra, ac nisi felicitas in tali"
-
-BUSINESS_NAMES = ['Business 1', 'Business 2']
+NUM_BUSINESSES = 2
 
 SB_TOKEN_ST_KEY = 'sb_token'
 SB_COOKIE_ST_KEY = 'sb_cookie'
-FILL_VALUES_ST_KEY = 'fill_values'
+BUSINESS_ST_KEY = 'selected_businesses'
 THEME_CHOICE_ST_KEY = 'theme_choice'
 GLOBAL_NOTES_ST_KEY = 'global_notes'
-
-DEV_URL = 'https://psuf5gocxc.execute-api.us-east-1.amazonaws.com/api'
-DEV_API_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNTI1YzdmNC00ZTM5LTQ0N2ItODRlMy0xZWE5OWI3ZjA5MGYiLCJpYXQiOjE2OTUwOTQ0ODYsIm5iZiI6MTY5NTA5NDQ4NiwiZXhwIjoxNzI2NjMwNDg2fQ.G-e-NnDenhLs6HsM6ymLfQz_lTHTo8RX4oZB9I5hJI0' # admin@admin.com
 
 SB_TEMPLATE_EDITOR_URL_PREFIX = "https://www.switchboard.ai/s/canvas/editor/"
 
@@ -64,6 +36,29 @@ def refresh():
 @st.cache_data
 def get_themes():
     return {x['name']: x for x in db.list_themes()}
+
+
+@st.cache_data
+def get_users():
+    users = list_users()
+    return {x['id']: x for x in users}
+
+users = get_users()
+
+@st.cache_data
+def get_businesses():
+    businesses = list_businesses()
+    businesses = {x['title']: {'brand': users[x['user_id']]['brand'], **x} for x in businesses if x['user_id'] in users}
+    return businesses
+
+
+
+@st.cache_data
+def get_prompts():
+    prompts = list_prompts()
+    return [x['prompt'] for x in prompts]
+
+
 
 
 def get_canvases():
@@ -89,23 +84,13 @@ def get_canvases():
                 db.put_storage(SB_COOKIE_ST_KEY, text)
                 st.rerun()
             st.stop()
-    
+
     return canvases
 
 
 def clickable_image(image_url, target_url, image_size=100):
     markdown = f'<a href="{target_url}" target="_blank"><img src="{image_url}" width="{image_size}" height="{image_size}"></a>'
     st.markdown(markdown, unsafe_allow_html=True)
-    st.image(image_url, width=image_size)
-
-
-def get_filler_text(value, max_characters):
-    if value is None:
-        return IPSEM_TEXT[:max_characters]
-    value = value[:max_characters]
-    if len(value) < max_characters:
-        value += IPSEM_TEXT[:max_characters - len(value)]
-    return value
 
 
 def display_text_containers(canvas: Canvas):
@@ -139,31 +124,22 @@ def display_text_containers(canvas: Canvas):
                                                        key=f'{old_component.name}_instructions-{canvas.name}')
 
     if new_canvas != canvas:
-        reload_image(new_canvas)
+        old_instructions = [x.instructions for x in canvas.text_components]
+        new_instructions = [x.instructions for x in new_canvas.text_components]
+        reload_image(new_canvas, use_dummy_data=old_instructions == new_instructions)
 
 
-def reload_image(canvas: Canvas):
+def reload_image(canvas: Canvas, use_dummy_data):
     st.session_state['canvases'][canvas.name] = canvas
     db.put_canvas(canvas)
 
+    assert NUM_BUSINESSES == 2
+    businesses = [st.session_state[f"{BUSINESS_ST_KEY}-{i}"] for i in range(NUM_BUSINESSES)]
+    canvases = [canvas for _ in range(NUM_BUSINESSES)]
+    st.toast(f"Requesting {NUM_BUSINESSES} new images for {canvas.name}...")
     with st.spinner("Wait for it..."):
-        if any(x.instructions for x in canvas.text_components):
-            regenerate_meme(canvas)
-        else:
-            fill_canvas_and_update_thumbnail(canvas)
+        image_urls = fill_canvases(canvases, businesses, use_dummy_data=use_dummy_data)
 
-
-fill_canvas_error = st.session_state.get('fill_canvas_error')
-if fill_canvas_error:
-    st.error(fill_canvas_error)
-    st.stop()
-
-
-def fill_canvas_and_update_thumbnail(canvas: Canvas):
-    st.toast(f"Requesting new image for {canvas.name}...")
-    fill_values_list = [st.session_state[f"{FILL_VALUES_ST_KEY}-{name}"] for name in BUSINESS_NAMES]
-    canvases = [canvas, canvas]
-    image_urls = asyncio.run(fill_canvases_async(canvases, fill_values_list))
     image_url, image_url_2 = image_urls
     if image_url:
         upload_image_to_s3(image_url, canvas.name + '.png')
@@ -181,76 +157,10 @@ def fill_canvas_and_update_thumbnail(canvas: Canvas):
     st.rerun()
 
 
-def regenerate_meme(canvas: Canvas):
-    payload = {
-        # template settings
-        'canvas_names': [canvas.name],
-        # content settings
-        'business_context': ("Business name: Joes Mugs.\n"
-                            "Summary: We create custom mugs using a process that only takes 5 minutes."),
-        'topic': "5 minute mugs",
-        'knowledge': "phone: 125-6767-1716",
-        'prompt': "Three things I wish I knew when I started my business:\n1. {first thing}\n2. {second thing}\n3. {third thing}",
-        'intention': "inform",
-        'cta': "buy mug",
-        'approximate_caption_length_chars': 300,
-        'language': "English",
-        'caption_suffix': "#CustomHashtag",
-        # brand_settings
-        'brand_color_hex': '#2596be',
-        'background_color_hex': '#FFFFFF',
-        'text_color_hex': '#000000',
-        'logo_url': 'https://marky-image-posts.s3.amazonaws.com/OAO_OFFICIAL_LOGO_v2.png',
-        'font_url': None
-    }
-    response = requests.post(f"{DEV_URL}/v1/posts/controlled",
-                             json=payload,
-                             headers={'Authorization': f'Bearer {DEV_API_TOKEN}'},
-                             ).json()
-    media_urls = response['media_urls']
-    image_url = list(media_urls.values())[0]
-
-    upload_image_to_s3(image_url, canvas.name + '.png')
-    canvas.thumbnail_url = image_url
-    st.session_state['canvases'][canvas.name] = canvas
-
-    st.rerun()
-
-
-async def fill_canvases_async(canvases: List[Canvas], fill_values_list: List[Dict[str, str]]):
-    async with aiohttp.ClientSession() as session:
-        tasks = []
-        for canvas, fill_values in zip(canvases, fill_values_list):
-            payload = fill_canvas_prepare_payload(canvas, fill_values)
-            task = asyncio.ensure_future(fill_canvas_make_request_async(session, payload))
-            tasks.append(task)
-        image_urls = await asyncio.gather(*tasks)
-    return image_urls
-
-
-async def fill_canvas_make_request_async(session, payload):
-    async with session.post(DEV_URL + '/v1/posts/fill-canvas',
-                            json=payload,
-                            headers={'Authorization': f'Bearer {DEV_API_TOKEN}'}) as response:
-        return (await response.json())['image_url']
-
-
-def fill_canvas_prepare_payload(canvas: Canvas, fill_values: Dict[str, str]):
-    text_content = {x.name: get_filler_text(fill_values['text_content'].get(x.name), x.max_characters)
-                    for x in canvas.text_components}
-    payload = {
-        'canvas_name': canvas.name,
-        **fill_values,
-        'text_content': text_content,
-    }
-    return payload
-
-
-def fill_canvas_make_request(payload):
-    response = requests.post(DEV_URL + '/v1/posts/fill-canvas',
-                             json=payload,
-                             headers={'Authorization': f'Bearer {DEV_API_TOKEN}'})
-    return response
+fill_canvas_error = st.session_state.get('fill_canvas_error')
+if fill_canvas_error:
+    st.error(fill_canvas_error)
+    st.stop()
 
 
 def display_action_bar(canvas: Canvas):
@@ -261,14 +171,12 @@ def display_action_bar(canvas: Canvas):
     col1, col2, col3, col4 = st.columns([1, 1, 2, 8])
 
     with col1:
-        st.markdown(
-            f"[Open]({SB_TEMPLATE_EDITOR_URL_PREFIX + st.session_state['canvases'][template_name].id})",
-            unsafe_allow_html=True,
-        )
+        if st.button('🔄', key=f'open-{template_name}', help="Regenerate using dummy data"):
+            reload_image(canvas, use_dummy_data=True)
 
     with col2:
-        if st.button('🔄', key=f'open-{template_name}'):
-            reload_image(canvas)
+        if st.button('🦄', key=f'open-{template_name}-smart', help="Regenerate using prompt"):
+            reload_image(canvas, use_dummy_data=False)
 
     with col3:
         edit_button_label = 'Edit Notes' if notes else 'Add Notes'
@@ -299,61 +207,49 @@ if not canvases:
     st.session_state['canvases'] = canvases
 
 
-def get_fill_values(business_name):
-    storage_key = f"{FILL_VALUES_ST_KEY}-{business_name}"
-    if not st.session_state.get(storage_key):
-        st.session_state[storage_key] = (db.get_storage(storage_key) or {
-            'background_image_url': list(BACKGROUND_URLS.values())[0],
-            'logo_url': list(LOGO_URLS.values())[0],
-            'background_color': "#ecc9bf",
-            'accent_color': "#cf3a72", # pink
-            'text_color': "#064e84", # blue
-            'text_content': TEXT_CONTENT,
-            'font_url': None,
-        })
-        db.put_storage(storage_key, st.session_state[storage_key])
-    return st.session_state[storage_key]
+def edit_business_pane(business_index):
+    with st.expander(f"Pick Business {business_index+1}"):
+        def full_brand(brand):
+            return all([brand['logo'], brand['background_color'], brand['color'], brand['text_color']])
 
+        storage_key = f"{BUSINESS_ST_KEY}-{business_index}"
+        businesses = get_businesses()
+        businesses = {k: x for k, x in businesses.items() if full_brand(x['brand'])}
+        old_selected_business = st.session_state.get(storage_key)
+        if not old_selected_business:
+            old_selected_business = db.get_storage(storage_key)
+        business_names = list(businesses.keys())
+        index = (business_names.index(old_selected_business['title'])
+                 if (old_selected_business and old_selected_business['title'] in business_names) else 0)
+        selected_business_name = st.selectbox("Business", businesses, key=f"select-business-{business_index}", index=index)
+        business = businesses[selected_business_name]
+        if not old_selected_business or selected_business_name != old_selected_business['title']:
+            db.put_storage(storage_key, business)
+        
+        st.session_state[storage_key] = business
 
-def edit_business_pane(business_name):
-    with st.expander(f"Edit {business_name}"):
-        storage_key = f"{FILL_VALUES_ST_KEY}-{business_name}"
-        fill_values = get_fill_values(business_name)
-        new_fill_values = {}
-        old_index = list(BACKGROUND_URLS.values()).index(fill_values['background_image_url'])
-        background_choice = st.radio('Select a background image:',
-                                    ('Image 1', 'Image 2', 'Image 3'),
-                                    index=old_index,
-                                    key=f'background_choice-{business_name}')
-        assert background_choice is not None
-        new_fill_values['background_image_url'] = BACKGROUND_URLS[background_choice]
-        st.image(new_fill_values['background_image_url'], width=300)
-
-        old_index = list(LOGO_URLS.values()).index(fill_values['logo_url']) if 'logo_url' in fill_values else 0
-        logo_choice = st.radio('Select a logo:', ('Logo 1', 'Logo 2', 'Logo 3'), index=old_index,
-                               key=f'logo_choice-{business_name}')
-        assert logo_choice is not None
-        new_fill_values['logo_url'] = LOGO_URLS[logo_choice]
-        st.image(new_fill_values['logo_url'], width=100)
+        logo = business['brand']['logo']
+        st.image(logo, width=100)
 
         col1, col2, col3 = st.columns(3)
         with col1:
-            new_fill_values['background_color'] = st.color_picker('Background', value=fill_values['background_color'],
-                                                                  key=f'background_color-{business_name}')
+            st.color_picker('Background', value=business['brand']['background_color'],
+                            key=f'background_color-{business_index}', disabled=True)
         with col2:
-            new_fill_values['accent_color'] = st.color_picker('Accent', value=fill_values['accent_color'],
-                                                                  key=f'accent_color-{business_name}')
+            st.color_picker('Accent', value=business['brand']['color'],
+                            key=f'accent_color-{business_index}', disabled=True)
         with col3:
-            new_fill_values['text_color'] = st.color_picker('Text', value=fill_values['text_color'],
-                                                                  key=f'text_color-{business_name}')
+            st.color_picker('Text', value=business['brand']['text_color'],
+                            key=f'text_color-{business_index}', disabled=True)
 
-        new_fill_values['text_content'] = {key: st.text_area(key, value=value, key=f'{key}-{business_name}')
-                                        for key, value in fill_values['text_content'].items()}
+        context = format_business_context(business)
+        st.text_area("Business", context, key=f'business-context-{business_index}')
 
-        values_changed = new_fill_values != fill_values
-        if values_changed:
-            db.put_storage(storage_key, new_fill_values)
-            st.session_state[storage_key] = new_fill_values
+        facts = format_facts(business)
+        st.text_area("Facts", facts, key=f'business-facts-{business_index}')
+
+        topic = business['topics'][0]['body']
+        st.text_area("Topic", topic, key=f'business-topic-{business_index}')
 
 
 def sidebar():
@@ -366,7 +262,7 @@ def sidebar():
         theme_choice = st.session_state[THEME_CHOICE_ST_KEY] = db.get_storage(THEME_CHOICE_ST_KEY)
 
     with st.sidebar:
-        theme_names = list(df.theme.unique()) + ['All']
+        theme_names = ['All'] + list(df.theme.unique())
         index_choice_index = theme_names.index(theme_choice) if theme_choice in theme_names else 0
         theme = st.selectbox('Theme', options=theme_names, index=index_choice_index)
         if theme != st.session_state[THEME_CHOICE_ST_KEY]:
@@ -397,13 +293,14 @@ def sidebar():
 
         image_size = st.slider('Image Size', min_value=100, max_value=300, value=150, step=50)
 
-        edit_business_pane(BUSINESS_NAMES[0])
-        edit_business_pane(BUSINESS_NAMES[1])
-
         if st.button("Pull Switchboard Changes"):
             refresh()
-
         st.info("⬆️ Run whenever you add a component or change it's name")
+
+        st.session_state[SELECTED_PROMPT_ST_KEY] = st.selectbox('Prompt', options=get_prompts())
+
+        for i in range(NUM_BUSINESSES):
+            edit_business_pane(i)
 
         with st.expander('Create Theme'):
             name = st.text_input('Name')
@@ -428,7 +325,7 @@ def sidebar():
 
 
 def main_table(df, image_size):
-    theme_names = list(get_themes().keys()) + [None]
+    theme_names = [None] + list(get_themes().keys())
     load = 50
     if len(df) == 0:
         st.write('No templates found matching filters')
@@ -436,17 +333,20 @@ def main_table(df, image_size):
         canvas = canvases[name]
         cols = st.columns(4)
         with cols[0]:
-            st.image(canvas.thumbnail_url, width=image_size)
+            clickable_image(canvas.thumbnail_url, SB_TEMPLATE_EDITOR_URL_PREFIX + canvas.id, image_size=image_size)
         with cols[1]:
-            if canvas.theme != 'meme':
-                if thumbnail_url := canvas.thumbnail_url_2:
-                    st.image(thumbnail_url, width=image_size)
-                else:
-                    st.write("click refresh")
+            if thumbnail_url := canvas.thumbnail_url_2:
+                clickable_image(thumbnail_url, SB_TEMPLATE_EDITOR_URL_PREFIX + canvas.id, image_size=image_size)
+            else:
+                st.write("click refresh")
         with cols[2]:
             approval_status = st.checkbox('Approved', value=canvas.approved, key=f'approval_status-{canvas.name}')
             if bool(approval_status) != bool(canvas.approved): # ie status changed
                 canvas.approved = approval_status
+                db.put_canvas(canvas)
+                st.session_state['canvases'][canvas.name] = canvas
+            if canvas.theme not in theme_names:
+                canvas.theme = None
                 db.put_canvas(canvas)
                 st.session_state['canvases'][canvas.name] = canvas
             theme = st.selectbox('theme', options=theme_names, index=theme_names.index(canvas.theme), key=f'theme-{canvas.name}')

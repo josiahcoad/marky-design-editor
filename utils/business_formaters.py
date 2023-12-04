@@ -37,7 +37,3 @@ def format_facts(business: dict):
         facts += f"- website: {website}\n"
 
     return facts
-
-
-def format_topic(content_topic: dict):
-    return f"{content_topic.get('title')} -- {content_topic.get('summary')}" or content_topic.get('body')

@@ -2,8 +2,7 @@ import aiohttp
 import asyncio
 import random
 import streamlit as st
-from streamlit_image_select import image_select
-from utils.business_formaters import format_business_context, format_topic, format_facts
+from utils.business_formaters import format_business_context, format_facts
 
 from utils.db import list_businesses, list_canvases, list_prompts
 
@@ -121,13 +120,20 @@ prompts = get_prompts()
 business = st.selectbox("Business", businesses.keys())
 topic_entered = st.text_input(f"Welcome {business}, what do you want to post about today?")
 topic_chosen = st.selectbox(label="Or choose one of the AI generated topics",
-                            options=[""] + [format_topic(x) for x in businesses[business].get('chapters', [])])
+                            options=[""] + [x['body'] for x in businesses[business].get('topics', [])])
 topic = topic_entered or topic_chosen
 topics = [topic]
 
 selected_options = st.session_state.get('selected_options', {})
 
 canvas_options = list(canvases.keys())
+
+with st.expander("See Business Details"):
+    business_context = st.text_area("Business Context", value=format_business_context(businesses[business]))
+    facts = st.text_area("Facts", value=format_facts(businesses[business]))
+    language = st.selectbox("Language", ["English", "Spanish"], index=0)
+
+
 with st.expander("⚙️ Generation Settings"):
     cta_options = businesses[business].get('ctas') or ["Call", "Visit", "Buy"]
     if st.button('Randomize'):
@@ -135,9 +141,6 @@ with st.expander("⚙️ Generation Settings"):
         random.shuffle(cta_options)
         random.shuffle(canvas_options)
 
-    business_context = st.text_area("Business Context", value=format_business_context(businesses[business]))
-    facts = st.text_area("Facts", value=format_facts(businesses[business]))
-    language = st.selectbox("Language", ["English", "Spanish"], index=0)
     canvas_names = st.multiselect("Canvas", canvases.keys(), default=canvas_options[:2])
     cols = st.columns(len(canvas_names))
     for i, canvas_name in enumerate(canvas_names):
