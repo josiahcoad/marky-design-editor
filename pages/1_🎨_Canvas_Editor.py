@@ -200,7 +200,7 @@ def regenerate_meme(canvas: Canvas):
         'brand_color_hex': '#2596be',
         'background_color_hex': '#FFFFFF',
         'text_color_hex': '#000000',
-        'logo_url': 'https://marky-image-posts.s3.amazonaws.com/wowbrow%20logo.png',
+        'logo_url': 'https://marky-image-posts.s3.amazonaws.com/OAO_OFFICIAL_LOGO_v2.png',
         'font_url': None
     }
     response = requests.post(f"{DEV_URL}/v1/posts/controlled",
