@@ -225,7 +225,6 @@ def edit_business_pane(business_index):
         business = businesses[selected_business_name]
         if not old_selected_business or selected_business_name != old_selected_business['title']:
             db.put_storage(storage_key, business)
-            st.rerun()
         
         st.session_state[storage_key] = business
 
