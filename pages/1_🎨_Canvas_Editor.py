@@ -191,11 +191,11 @@ def regenerate_meme(canvas: Canvas):
         'topic': "5 minute mugs",
         'knowledge': "phone: 125-6767-1716",
         'prompt': "Three things I wish I knew when I started my business:\n1. {first thing}\n2. {second thing}\n3. {third thing}",
-        'intention': "entertain",
+        'intention': "inform",
         'cta': "buy mug",
         'approximate_caption_length_chars': 300,
         'language': "English",
-        'caption_suffix': "",
+        'caption_suffix': "#CustomHashtag",
         # brand_settings
         'brand_color_hex': '#2596be',
         'background_color_hex': '#FFFFFF',
