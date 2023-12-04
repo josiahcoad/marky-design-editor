@@ -147,7 +147,7 @@ def reload_image(canvas: Canvas):
     db.put_canvas(canvas)
 
     with st.spinner("Wait for it..."):
-        if canvas.theme == 'meme':
+        if any(x.instructions for x in canvas.text_components):
             regenerate_meme(canvas)
         else:
             fill_canvas_and_update_thumbnail(canvas)
@@ -186,7 +186,8 @@ def regenerate_meme(canvas: Canvas):
         # template settings
         'canvas_names': [canvas.name],
         # content settings
-        'business_context': "We create custom mugs using a process that only takes 5 minutes.",
+        'business_context': ("Business name: Joes Mugs.\n"
+                            "Summary: We create custom mugs using a process that only takes 5 minutes."),
         'topic': "5 minute mugs",
         'knowledge': "phone: 125-6767-1716",
         'prompt': "",
