@@ -115,27 +115,67 @@ with st.expander("Select test business"):
 
     topic = st.selectbox('Topic', [x['body'] for x in businesses[business_name]['topics']])
 
+CHOSEN_PROMPT_ST_KEY = 'chosen-prompt'
 
-prompt_id = st.selectbox('Post Template', list(st.session_state['prompts'].keys()), format_func=lambda x: st.session_state['prompts'][x]['prompt'])
-chosen_prompt = st.session_state['prompts'][prompt_id]['prompt']
+with st.sidebar:
+    counts = {
+        'Approved': len([x for x in st.session_state['prompts'].values() if x.get('approved', False)]),
+        'Unapproved': len([x for x in st.session_state['prompts'].values() if not x.get('approved', False)]),
+        'All': len(st.session_state['prompts'].values()),
+    }
+    approval_filter = st.selectbox('Filter by Approval', ['All', 'Approved', 'Unapproved'], format_func=lambda x: f"{x} ({counts[x]})")
+    for prompt_id, prompt_obj in st.session_state['prompts'].items():
+        if approval_filter == 'Approved' and not prompt_obj.get('approved', False):
+            continue
+        if approval_filter == 'Unapproved' and prompt_obj.get('approved', False):
+            continue
+        st.text(prompt_obj['prompt'])
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col1:
+            if prompt_obj.get('approved', False):
+                if st.button("❌ Unapprove", key=f'{prompt_id}_unapprove'):
+                    prompt_obj['approved'] = False
+                    db.put_prompt(prompt_obj)
+                    st.session_state['prompts'][prompt_id] = prompt_obj
+                    st.rerun() 
+            else:
+                if st.button("✅ Approve", key=f'{prompt_id}_approve'):
+                    prompt_obj['approved'] = True
+                    db.put_prompt(prompt_obj)
+                    st.session_state['prompts'][prompt_id] = prompt_obj
+                    st.rerun()
+        with col2:
+            if st.button("🗑️ Delete", key=f'{prompt_id}_delete'):
+                db.delete_prompt(prompt_obj)
+                del st.session_state['prompts'][prompt_id]
+                st.rerun()
+        with col3:
+            if st.button("Insert ➡️", key=prompt_id):
+                st.session_state[CHOSEN_PROMPT_ST_KEY] = prompt_obj
+                st.rerun()
+        st.markdown('---')
+
+
+chosen_prompt = st.session_state.get(CHOSEN_PROMPT_ST_KEY, list(st.session_state['prompts'].values())[0])
+
 col1, col2 = st.columns([7, 3])
 with col1:
-    edited_prompt = st.text_area('(Optional) Edit Template', value=st.session_state['prompts'][prompt_id]['prompt'], height=200)
-    if edited_prompt != chosen_prompt:
-        st.session_state['prompts'][prompt_id]['prompt'] = edited_prompt
-        db.put_prompt(st.session_state['prompts'][prompt_id])
+    edited_prompt = st.text_area('(Optional) Edit Template', value=chosen_prompt['prompt'], height=200)
+    if edited_prompt != chosen_prompt['prompt']:
+        st.session_state['prompts'][chosen_prompt['id']]['prompt'] = edited_prompt
+        db.put_prompt(st.session_state['prompts'][chosen_prompt['id']])
         st.success('Template Updated')
         st.rerun()
 
 with col2:
-    if st.button('Create New'):
+    if st.button('Save As New Prompt'):
         new_prompt_obj = {'id': str(uuid.uuid4()), 'created_at': datetime.now().isoformat(), 'prompt': edited_prompt}
         db.put_prompt(new_prompt_obj)
         st.session_state['prompts'][new_prompt_obj['id']] = new_prompt_obj
         st.rerun()
     if st.button('Delete'):
-        db.delete_prompt({'id': prompt_id})
-        del st.session_state['prompts'][prompt_id]
+        db.delete_prompt({'id': chosen_prompt['id']})
+        del st.session_state['prompts'][chosen_prompt['id']]
         st.rerun()
 
 
