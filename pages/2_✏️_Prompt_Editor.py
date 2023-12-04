@@ -88,10 +88,11 @@ Remember, you must
 
 
 master_prompt = st.session_state.get(MASTER_PROMPT_KEY) or db.get_storage(MASTER_PROMPT_KEY) or MASTER_PROMPT
-new_master_prompt = st.text_area('Master Prompt', value=master_prompt, height=800)
-if new_master_prompt != master_prompt:
-    db.put_storage(MASTER_PROMPT_KEY, new_master_prompt)
-    st.session_state[MASTER_PROMPT_KEY] = new_master_prompt
+with st.expander("Master Prompt"):
+    new_master_prompt = st.text_area('', value=master_prompt, height=800, label_visibility='collapsed')
+    if new_master_prompt != master_prompt:
+        db.put_storage(MASTER_PROMPT_KEY, new_master_prompt)
+        st.session_state[MASTER_PROMPT_KEY] = new_master_prompt
 
 
 caption_prompt = st.session_state.get(CAPTION_PROMPT_KEY) or db.get_storage(CAPTION_PROMPT_KEY) or CAPTION_INSTRUCTIONS
@@ -103,7 +104,7 @@ if new_caption_prompt != caption_prompt:
 
 language = "English"
 
-with st.expander("Select test business"):
+with st.expander("Select Test Business"):
     businesses = get_businesses()
     business_names = list(businesses.keys())
     business_name = st.selectbox('Business', business_names)
@@ -150,7 +151,7 @@ with st.sidebar:
                 del st.session_state['prompts'][prompt_id]
                 st.rerun()
         with col3:
-            if st.button("Insert ➡️", key=prompt_id):
+            if st.button("Try It ➡️", key=prompt_id):
                 st.session_state[CHOSEN_PROMPT_ST_KEY] = prompt_obj
                 st.rerun()
         st.markdown('---')
@@ -160,7 +161,7 @@ chosen_prompt = st.session_state.get(CHOSEN_PROMPT_ST_KEY, list(st.session_state
 
 col1, col2 = st.columns([7, 3])
 with col1:
-    edited_prompt = st.text_area('(Optional) Edit Template', value=chosen_prompt['prompt'], height=200)
+    edited_prompt = st.text_area('Post Prompt', value=chosen_prompt['prompt'], height=200)
     if edited_prompt != chosen_prompt['prompt']:
         st.session_state['prompts'][chosen_prompt['id']]['prompt'] = edited_prompt
         db.put_prompt(st.session_state['prompts'][chosen_prompt['id']])
