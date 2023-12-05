@@ -263,7 +263,7 @@ payload = {
 if st.button('Run Prompt'):
     st.text(f"Request Price: {(len(final_prompt.split())*1.3) / 1000:.1f} cents")
     with st.spinner('Wait for it...'):
-        response = prompt_gpt_json(final_prompt, creativity=0, model=4)
+        response = prompt_gpt_json(final_prompt, creativity=0.9, model=4)
     st.text(f"Response Price: {((len(json.dumps(response).split())*1.3) / 1000)*3:.1f} cents")
     sections = [f'__{key}__\n{value}' for key, value in response.items()]
     st.text_area("Response", '\n\n'.join(sections), height=800)
