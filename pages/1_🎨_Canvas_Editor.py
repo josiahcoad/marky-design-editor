@@ -227,7 +227,7 @@ def edit_business_pane(business_index):
             db.put_storage(storage_key, business)
         
         st.session_state[storage_key] = business
-        st.session_state[storage_key]['brand']['avatar'] = st.session_state[AVATAR_URL_ST_KEY]
+        st.session_state[storage_key]['brand']['avatar'] = st.session_state.get(AVATAR_URL_ST_KEY)
 
         logo = business['brand']['logo']
         st.image(logo, width=100)
