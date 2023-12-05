@@ -243,13 +243,13 @@ def edit_business_pane(business_index):
                             key=f'text_color-{business_index}', disabled=True)
 
         context = format_business_context(business)
-        st.text("Business", context)
+        st.text(f"Business: {context}")
 
         facts = format_facts(business)
-        st.text("Facts", facts)
+        st.text(f"Facts: {facts}")
 
         topic = business['topics'][0]['body']
-        st.text("Topic", topic)
+        st.text(f"Topic: {topic}")
 
 
 def sidebar():
