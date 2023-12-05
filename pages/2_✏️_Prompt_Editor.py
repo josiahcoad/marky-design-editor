@@ -120,10 +120,13 @@ with st.sidebar:
         'All': len(st.session_state['prompts'].values()),
     }
     approval_filter = st.selectbox('Filter by Approval', ['All', 'Approved', 'Unapproved'], format_func=lambda x: f"{x} ({counts[x]})")
+    text_filter = st.text_input('Search', key='text_filter')
     for prompt_id, prompt_obj in st.session_state['prompts'].items():
         if approval_filter == 'Approved' and not prompt_obj.get('approved', False):
             continue
         if approval_filter == 'Unapproved' and prompt_obj.get('approved', False):
+            continue
+        if text_filter and text_filter.lower() not in prompt_obj['prompt'].lower():
             continue
         st.text(prompt_obj['prompt'])
         col1, col2, col3 = st.columns([1, 1, 1])
