@@ -1,19 +1,14 @@
 from datetime import datetime
 import json
-from typing import List
 import uuid
-import requests
 import streamlit as st
 
 from utils import db
-import aiohttp
-import asyncio
-import random
 import streamlit as st
 from streamlit_image_select import image_select
 from utils.business_formaters import format_business_context, format_facts
 
-from utils.db import list_businesses, list_canvases, list_prompts
+from utils.db import list_businesses, list_prompts
 from utils.dto import TextComponent
 from utils.prompt_gpt import prompt_gpt_json
 
@@ -268,7 +263,7 @@ payload = {
 if st.button('Run Prompt'):
     st.text(f"Request Price: {(len(final_prompt.split())*1.3) / 1000:.1f} cents")
     with st.spinner('Wait for it...'):
-        response = prompt_gpt_json(final_prompt, creativity=0.9, model=4)
+        response = prompt_gpt_json(final_prompt, creativity=0, model=4)
     st.text(f"Response Price: {((len(json.dumps(response).split())*1.3) / 1000)*3:.1f} cents")
     sections = [f'__{key}__\n{value}' for key, value in response.items()]
     st.text_area("Response", '\n\n'.join(sections), height=800)
