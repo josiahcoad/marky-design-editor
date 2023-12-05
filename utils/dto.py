@@ -68,6 +68,11 @@ class ImageComponent(CanvasComponent):
         return self.is_named('logo')
 
     @property
+    def is_avatar(self):
+        # This is just the agreed upon magic string name for a avatar
+        return self.is_named('avatar')
+
+    @property
     def is_logo_bg(self):
         # This is just the agreed upon magic string name for a logo background
         return self.is_named('logo-bg')
@@ -130,6 +135,10 @@ class Canvas(BaseDBModel):
     @property
     def has_logo(self):
         return any(x for x in self.components if isinstance(x, ImageComponent) and x.is_logo)
+
+    @property
+    def has_avatar(self):
+        return any(x for x in self.components if isinstance(x, ImageComponent) and x.is_avatar)
 
     @property
     def background_colored_layer(self):

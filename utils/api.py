@@ -81,6 +81,7 @@ def generate_post_prepare_payload(canvas: Canvas, business):
         'background_color_hex': business['brand']['background_color'],
         'text_color_hex': business['brand']['text_color'],
         'logo_url': business['brand']['logo'],
+        'avatar_url': business['brand'].get('avatar'),
         'font_url': None
     }
     print('payload', payload)
@@ -100,6 +101,7 @@ def fill_canvas_prepare_payload(canvas: Canvas, business: Dict[str, str]):
                     for x in canvas.text_components}
     fill_values = {
         'logo_url': business['brand']['logo'],
+        'avatar_url': business['brand'].get('avatar'),
         'background_image_url': random.choice(BACKGROUND_URLS),
         'background_color': business['brand']['background_color'],
         'accent_color': business['brand']['color'],
@@ -110,6 +112,7 @@ def fill_canvas_prepare_payload(canvas: Canvas, business: Dict[str, str]):
         **fill_values,
         'text_content': text_content,
     }
+    print('payload', payload)
     return payload
 
 

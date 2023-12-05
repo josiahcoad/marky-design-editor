@@ -23,9 +23,9 @@ SB_COOKIE_ST_KEY = 'sb_cookie'
 BUSINESS_ST_KEY = 'selected_businesses'
 THEME_CHOICE_ST_KEY = 'theme_choice'
 GLOBAL_NOTES_ST_KEY = 'global_notes'
+AVATAR_URL_ST_KEY = 'avatar_url'
 
 SB_TEMPLATE_EDITOR_URL_PREFIX = "https://www.switchboard.ai/s/canvas/editor/"
-
 
 def refresh():
     st.session_state['canvases'] = None
@@ -227,6 +227,7 @@ def edit_business_pane(business_index):
             db.put_storage(storage_key, business)
         
         st.session_state[storage_key] = business
+        st.session_state[storage_key]['brand']['avatar'] = st.session_state[AVATAR_URL_ST_KEY]
 
         logo = business['brand']['logo']
         st.image(logo, width=100)
@@ -302,6 +303,14 @@ def sidebar():
         for i in range(NUM_BUSINESSES):
             edit_business_pane(i)
 
+        avatar_url = st.text_input('Avatar URL',
+                                   value=st.session_state.get(AVATAR_URL_ST_KEY) or db.get_storage(AVATAR_URL_ST_KEY))
+        if avatar_url:
+            st.image(avatar_url, width=100)
+        if avatar_url != st.session_state.get(AVATAR_URL_ST_KEY):
+            st.session_state[AVATAR_URL_ST_KEY] = avatar_url
+            db.put_storage(AVATAR_URL_ST_KEY, avatar_url)
+
         with st.expander('Create Theme'):
             name = st.text_input('Name')
             theme_canvases_chosen = st.multiselect('Canvases',
@@ -361,6 +370,7 @@ def main_table(df, image_size):
             st.markdown(f"- accent: {[x.name for x in canvas.accent_colored_layer]}")
             st.markdown(f'- bg-photo: {"✅" if canvas.has_background_photo else "❌"}')
             st.markdown(f'- logo: {"✅" if canvas.has_logo else "❌"}')
+            st.markdown(f'- avatar: {"✅" if canvas.has_avatar else "❌"}')
 
         display_action_bar(canvas)
         with st.expander(canvas.name):
