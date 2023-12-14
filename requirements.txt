@@ -6,3 +6,4 @@ streamlit-image-select
 aiohttp
 asyncio
 python-slugify
+plotly_express
