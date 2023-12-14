@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import List, Literal, Optional
 import uuid
-
-from pydantic import BaseModel
+from slugify import slugify
+from pydantic import BaseModel, Field, model_validator
 
 
 class TextColorType(str, Enum):
@@ -116,17 +116,28 @@ FilledComponents = List[FilledTextComponent | FilledImageComponent | FilledShape
 
 
 class BaseDBModel(BaseModel):
-    id: str = str(uuid.uuid4())
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
 
 
 class Canvas(BaseDBModel):
+    display_name: str
     name: str
     components: Components
-    thumbnail_url: str
-    thumbnail_url_2: Optional[str] = None
     theme: Optional[str] = None
     approved: bool = False
     notes: Optional[str] = None
+    standalone: bool = True
+
+    @model_validator(mode='before')
+    @classmethod
+    def fillin_name(cls, data: dict):
+        display_name = data.get('display_name')
+        name = data.get('name')
+        if name and not display_name:
+            data['display_name'] = name.replace('-', ' ').title()
+        if display_name and not name:
+            data['name'] = slugify(display_name)
+        return data
 
     @property
     def has_background_photo(self):

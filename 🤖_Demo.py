@@ -5,6 +5,7 @@ import streamlit as st
 from utils.business_formaters import format_business_context, format_facts
 
 from utils.db import list_businesses, list_canvases, list_prompts
+from utils.thumbnail import get_thumbnail
 
 DEV_URL = 'https://psuf5gocxc.execute-api.us-east-1.amazonaws.com/api'
 DEV_API_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNTI1YzdmNC00ZTM5LTQ0N2ItODRlMy0xZWE5OWI3ZjA5MGYiLCJpYXQiOjE2OTUwOTQ0ODYsIm5iZiI6MTY5NTA5NDQ4NiwiZXhwIjoxNzI2NjMwNDg2fQ.G-e-NnDenhLs6HsM6ymLfQz_lTHTo8RX4oZB9I5hJI0' # admin@admin.com
@@ -145,7 +146,7 @@ with st.expander("⚙️ Generation Settings"):
     cols = st.columns(len(canvas_names))
     for i, canvas_name in enumerate(canvas_names):
         with cols[i]:
-            st.image(canvases[canvas_name].thumbnail_url, use_column_width="auto")
+            st.image(get_thumbnail(canvas_name), use_column_width="auto")
     # img = image_select("Label", ["image1.png", "image2.png", "image3.png"])
     selected_prompts = st.multiselect("Template", prompts, default=prompts[:2])
     ctas = st.multiselect("CTA", cta_options, cta_options[:1])

@@ -1,4 +1,6 @@
 import random
+import time
+import requests
 import streamlit as st
 
 import asyncio
@@ -123,3 +125,60 @@ def get_filler_text(value, max_characters):
     if len(value) < max_characters:
         value += IPSEM_TEXT[:max_characters - len(value)]
     return value
+
+
+def init_create_carousel_post(
+        canvas_names,
+        business_context,
+        topic,
+        knowledge,
+        prompt,
+        intention,
+        cta,
+        approximate_caption_length_chars,
+        language,
+        caption_suffix,
+        brand_color_hex,
+        background_color_hex,
+        text_color_hex,
+        logo_url,
+        avatar_url,
+    ):
+    response = requests.post(f"{DEV_URL}/v1/posts/async",
+                                json={
+                                    # template settings
+                                    'canvas_names': canvas_names,
+                                    # content settings
+                                    'business_context': business_context,
+                                    'topic': topic,
+                                    'knowledge': knowledge,
+                                    'prompt': prompt,
+                                    'intention': intention,
+                                    'cta': cta,
+                                    'approximate_caption_length_chars': approximate_caption_length_chars,
+                                    'language': language,
+                                    'caption_suffix': caption_suffix,
+                                    # brand_settings
+                                    'brand_color_hex': brand_color_hex,
+                                    'background_color_hex': background_color_hex,
+                                    'text_color_hex': text_color_hex,
+                                    'logo_url': logo_url,
+                                    'avatar_url': avatar_url
+                                },
+                                headers={'Authorization': f'Bearer {DEV_API_TOKEN}'})
+    assert response.ok, response.text
+    post_id = response.json()['id']
+    return post_id
+
+
+def get_post(post_id):
+    response = requests.get(f"{DEV_URL}/v1/posts/{post_id}",
+                            headers={'Authorization': f'Bearer {DEV_API_TOKEN}'})
+    assert response.ok, response.text
+    rjson = response.json()
+    assert rjson['posts'] and len(rjson['posts']) == 1, rjson
+    post = list(rjson['posts'].values())[0]
+    assert post['status'] != 'FAILED', post['failed_reason']
+    if post['status'] != 'LOADING':
+        return post
+    return None

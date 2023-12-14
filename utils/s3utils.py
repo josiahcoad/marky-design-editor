@@ -1,3 +1,4 @@
+from typing import Dict
 import boto3
 import requests
 from io import BytesIO
@@ -29,7 +30,7 @@ def upload_image_to_s3(image_url, object_name, bucket_name='marky-image-posts', 
     return S3_URL_PREFIX + object_name
 
 
-def list_s3_objects(bucket_name='marky-image-posts', prefix='thumbnails'):
+def list_s3_objects(bucket_name='marky-image-posts', prefix='thumbnails') -> Dict[str, str]:
     s3_client = boto3.client('s3')
     response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
     return {x['Key'].removeprefix(prefix + '/').split('.')[0]: (S3_URL_PREFIX + x['Key']) for x in response.get('Contents', [])}

@@ -8,7 +8,7 @@ import streamlit as st
 from streamlit_image_select import image_select
 from utils.business_formaters import format_business_context, format_facts
 
-from utils.db import list_businesses, list_prompts
+from utils import db
 from utils.dto import TextComponent
 from utils.prompt_gpt import prompt_gpt_json
 
@@ -18,26 +18,13 @@ SB_TEMPLATE_EDITOR_URL_PREFIX = "https://www.switchboard.ai/s/canvas/editor/"
 
 st.set_page_config(layout='wide', page_title="Prompt", page_icon="✏️")
 
-
-@st.cache_data
-def get_businesses():
-    businesses = list_businesses()
-    return {x['title']: x for x in businesses if x.get('testimonials')}
-
-
-@st.cache_data
-def get_prompts():
-    prompts = list_prompts()
-    return {x['id']: x for x in prompts}
-
-prompts = st.session_state.get('prompts')
-if not prompts:
-    prompts = get_prompts()
-    st.session_state['prompts'] = prompts
+prompts = db.list_prompts()
+businesses = db.list_users_joined_businesses(only_full_businesses=True)
 
 
 MASTER_PROMPT_KEY = 'master-prompt'
 CAPTION_PROMPT_KEY = 'caption-prompt'
+CHOSEN_PROMPT_ST_KEY = 'chosen-prompt'
 
 CAPTION_INSTRUCTIONS = (
     "I want you to create a caption to go along with the graphic. "
@@ -82,111 +69,86 @@ Remember, you must
 """
 
 
-master_prompt = st.session_state.get(MASTER_PROMPT_KEY) or db.get_storage(MASTER_PROMPT_KEY) or MASTER_PROMPT
+master_prompt = db.get_storage(MASTER_PROMPT_KEY) or MASTER_PROMPT
 with st.expander("Master Prompt"):
     new_master_prompt = st.text_area('', value=master_prompt, height=800, label_visibility='collapsed')
     if new_master_prompt != master_prompt:
-        db.put_storage(MASTER_PROMPT_KEY, new_master_prompt)
-        st.session_state[MASTER_PROMPT_KEY] = new_master_prompt
+        db.save_storage(MASTER_PROMPT_KEY, new_master_prompt)
 
 
-caption_prompt = st.session_state.get(CAPTION_PROMPT_KEY) or db.get_storage(CAPTION_PROMPT_KEY) or CAPTION_INSTRUCTIONS
+caption_prompt = db.get_storage(CAPTION_PROMPT_KEY) or CAPTION_INSTRUCTIONS
 new_caption_prompt = st.text_area('Caption Instructions', value=caption_prompt)
 if new_caption_prompt != caption_prompt:
-    db.put_storage(CAPTION_PROMPT_KEY, new_caption_prompt)
-    st.session_state[CAPTION_PROMPT_KEY] = new_caption_prompt
+    db.save_storage(CAPTION_PROMPT_KEY, new_caption_prompt)
 
 
 language = "English"
 
 with st.expander("Select Test Business"):
-    businesses = get_businesses()
-    business_names = list(businesses.keys())
-    business_name = st.selectbox('Business', business_names)
-    facts = st.text_area('Facts', value=format_facts(businesses[business_name]))
-    context = st.text_area('Business Context', value=format_business_context(businesses[business_name]))
-    cta = st.selectbox('CTA', businesses[business_name].get('ctas') or ["Call", "Visit", "Buy"])
+    business = st.selectbox('Business', list(businesses), format_func=lambda x: x['title'])
+    if business:
+        facts = st.text_area('Facts', value=format_facts(business))
+        context = st.text_area('Business Context', value=format_business_context(business))
+        cta = st.selectbox('CTA', business['ctas'])
+        intention = st.selectbox('Intention', ['Inspire', 'Inform', 'Entertain', 'Sell'])
+        topic = st.selectbox('Topic', [x['body'] for x in business['topics']])
 
-    intention = st.selectbox('Intention', ['Inspire', 'Inform', 'Entertain', 'Sell'])
-
-    topic = st.selectbox('Topic', [x['body'] for x in businesses[business_name]['topics']])
-
-CHOSEN_PROMPT_ST_KEY = 'chosen-prompt'
 
 with st.sidebar:
     counts = {
-        'Approved': len([x for x in st.session_state['prompts'].values() if x.get('approved', False)]),
-        'Unapproved': len([x for x in st.session_state['prompts'].values() if not x.get('approved', False)]),
-        'All': len(st.session_state['prompts'].values()),
+        'Approved': len([prompt for prompt in prompts if prompt.get('approved', False)]),
+        'Unapproved': len([prompt for prompt in prompts if not prompt.get('approved', False)]),
+        'All': len(prompts),
     }
     approval_filter = st.selectbox('Filter by Approval', ['All', 'Approved', 'Unapproved'], format_func=lambda x: f"{x} ({counts[x]})")
     text_filter = st.text_input('Search', key='text_filter')
-    for prompt_id, prompt_obj in st.session_state['prompts'].items():
-        if approval_filter == 'Approved' and not prompt_obj.get('approved', False):
+    for prompt in prompts:
+        if approval_filter == 'Approved' and not prompt.get('approved', False):
             continue
-        if approval_filter == 'Unapproved' and prompt_obj.get('approved', False):
+        if approval_filter == 'Unapproved' and prompt.get('approved', False):
             continue
-        if text_filter and text_filter.lower() not in prompt_obj['prompt'].lower():
+        if text_filter and text_filter.lower() not in prompt['prompt'].lower():
             continue
-        st.text(prompt_obj['prompt'])
+        st.text(prompt['prompt'])
         col1, col2, col3 = st.columns([1, 1, 1])
         with col1:
-            if prompt_obj.get('approved', False):
-                if st.button("❌ Unapprove", key=f'{prompt_id}_unapprove'):
-                    prompt_obj['approved'] = False
-                    db.put_prompt(prompt_obj)
-                    st.session_state['prompts'][prompt_id] = prompt_obj
-                    st.rerun() 
+            if prompt.get('approved', False):
+                if st.button("❌ Unapprove", key=f'{prompt["id"]}_unapprove'):
+                    prompt['approved'] = False
+                    db.save_prompt(prompt)
             else:
-                if st.button("✅ Approve", key=f'{prompt_id}_approve'):
-                    prompt_obj['approved'] = True
-                    db.put_prompt(prompt_obj)
-                    st.session_state['prompts'][prompt_id] = prompt_obj
-                    st.rerun()
+                if st.button("✅ Approve", key=f'{prompt["id"]}_approve'):
+                    prompt['approved'] = True
+                    db.save_prompt(prompt)
         with col2:
-            if st.button("🗑️ Delete", key=f'{prompt_id}_delete'):
-                db.delete_prompt(prompt_obj)
-                del st.session_state['prompts'][prompt_id]
-                st.rerun()
+            if st.button("🗑️ Delete", key=f'{prompt["id"]}_delete'):
+                db.delete_prompt(prompt)
         with col3:
-            if st.button("Try It ➡️", key=prompt_id):
-                st.session_state[CHOSEN_PROMPT_ST_KEY] = prompt_obj
-                st.rerun()
+            if st.button("Try It ➡️", key=prompt["id"]):
+                db.save_storage(CHOSEN_PROMPT_ST_KEY, prompt)
         st.markdown('---')
 
-
-chosen_prompt = st.session_state.get(CHOSEN_PROMPT_ST_KEY, list(st.session_state['prompts'].values())[0])
+chosen_prompt = db.get_storage(CHOSEN_PROMPT_ST_KEY) or prompts[0]
 
 col1, col2 = st.columns([7, 3])
 with col1:
     edited_prompt = st.text_area('Post Prompt', value=chosen_prompt['prompt'], height=200)
     if edited_prompt != chosen_prompt['prompt']:
-        st.session_state['prompts'][chosen_prompt['id']]['prompt'] = edited_prompt
-        db.put_prompt(st.session_state['prompts'][chosen_prompt['id']])
-        st.success('Template Updated')
+        chosen_prompt['prompt'] = edited_prompt
+        db.save_prompt(chosen_prompt)
         st.rerun()
 
 with col2:
     if st.button('Save As New Prompt'):
         new_prompt_obj = {'id': str(uuid.uuid4()), 'created_at': datetime.now().isoformat(), 'prompt': edited_prompt}
-        db.put_prompt(new_prompt_obj)
-        st.session_state['prompts'][new_prompt_obj['id']] = new_prompt_obj
-        st.rerun()
+        db.save_prompt(new_prompt_obj)
     if st.button('Delete'):
-        db.delete_prompt({'id': chosen_prompt['id']})
-        del st.session_state['prompts'][chosen_prompt['id']]
-        st.rerun()
+        db.delete_prompt(chosen_prompt)
 
-
-default_components = [
-    {'name': 'title', 'max_characters': 50, 'instructions': "{title of the post}"},
-    {'name': 'content', 'max_characters': 150, 'instructions': "{body of the post}"},
-    {'name': 'cta', 'max_characters': 20, 'instructions': "{Call to action}"},
-]
 
 components = st.session_state.get('text_components') or [
-    TextComponent(name='title', max_characters=50, instructions="{title of the post}"),
-    TextComponent(name='content', max_characters=150, instructions="{body of the post}"),
+    TextComponent(name='title', max_characters=50, instructions="{post-template starts here}"),
+    TextComponent(name='content', max_characters=150, instructions="{post-template continues here}"),
     TextComponent(name='cta', max_characters=20, instructions="{Call to action}"),
 ]
 
@@ -208,18 +170,17 @@ with st.expander('Text Components'):
             if st.button('Delete', key=f'{component.name}_delete'):
                 components.remove(component)
                 st.session_state['text_components'] = components
-                st.rerun()
 
     if st.button('Add Component'):
         components.append(TextComponent(name=f'new_component-{len(components)}', max_characters=50, instructions=""))
         st.session_state['text_components'] = components
-        st.rerun()
 
     st.session_state['text_components'] = components
 
-
-
-caption_component = TextComponent(name='caption', max_characters=500, instructions=new_caption_prompt)
+cols = st.columns(2)
+with cols[0]:
+    caption_length = st.slider('Caption Length', min_value=0, max_value=1000, value=500, step=50)
+caption_component = TextComponent(name='caption', max_characters=caption_length, instructions=new_caption_prompt)
 
 def format_section(component: TextComponent):
     return (f"Section:\n"
@@ -243,11 +204,6 @@ final_prompt = new_master_prompt.format(
 )
 with st.expander("Filled in Prompt"):
     st.text(final_prompt)
-
-
-import aiohttp
-import asyncio
-
 
 
 payload = {
