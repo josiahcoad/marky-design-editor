@@ -10,6 +10,7 @@ from utils.business_formaters import format_business_context, format_facts
 
 from utils import db
 from utils.dto import TextComponent
+from utils.instructions import fill_section_instructions
 from utils.prompt_gpt import prompt_gpt_json
 
 DEV_URL = 'https://psuf5gocxc.execute-api.us-east-1.amazonaws.com/api'
@@ -147,9 +148,9 @@ with col2:
 
 
 components = st.session_state.get('text_components') or [
-    TextComponent(name='title', max_characters=50, instructions="{post-template starts here}"),
-    TextComponent(name='content', max_characters=150, instructions="{post-template continues here}"),
-    TextComponent(name='cta', max_characters=20, instructions="{Call to action}"),
+    TextComponent(name='title', max_characters=50, fill_section_instructions('title')),
+    TextComponent(name='content', max_characters=150, fill_section_instructions('content')),
+    TextComponent(name='cta', max_characters=20, fill_section_instructions('cta')),
 ]
 
 with st.expander('Text Components'):
@@ -172,7 +173,8 @@ with st.expander('Text Components'):
                 st.session_state['text_components'] = components
 
     if st.button('Add Component'):
-        components.append(TextComponent(name=f'new_component-{len(components)}', max_characters=50, instructions=""))
+        name = f'new_component-{len(components)}'
+        components.append(TextComponent(name=name, max_characters=50, instructions=fill_section_instructions(name)))
         st.session_state['text_components'] = components
 
     st.session_state['text_components'] = components

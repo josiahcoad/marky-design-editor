@@ -22,7 +22,7 @@ st.session_state['lambda_is_cold'] = st.session_state.get('lambda_is_cold', True
 with st.sidebar:
     carousel_selected = st.selectbox("Carousel",
                                      carousels,
-                                     format_func=lambda x: x['display_name'],
+                                     format_func=lambda x: x['name'],
                                      index=0)
     if not carousel_selected:
         st.error("No carousel made. Please make one first in the canvas editor.")
@@ -81,7 +81,7 @@ with st.sidebar:
         index = prompt_ids.index(chosen_prompt_id) if chosen_prompt_id in prompt_ids else 0
         prompt = st.selectbox("Prompt", prompts, format_func=lambda x: x['prompt'], index=index)
         st.session_state['chosen_prompt_id'] = prompt['id']
-        new_prompt = st.text_area("Prompt", prompt['prompt'], label_visibility='collapsed')
+        new_prompt = st.text_area("Prompt", prompt['prompt'], label_visibility='collapsed', height=150)
         if new_prompt != prompt['prompt']:
             prompt['prompt'] = new_prompt
             db.save_prompt(prompt)
@@ -119,7 +119,7 @@ while (start_time := st.session_state['loading_post_start_time']):
     timer.text(f"Loading (takes 30-60 seconds)... {time_waiting:.1f} seconds")
     loader.progress(min(time_waiting / estimated_time, 1.0))
     time.sleep(.1)
-    if int(time_waiting) % 3 == 0:
+    if int(time_waiting) % 3 and round(time_waiting - int(time_waiting)) == 0:
         post = marky.get_post(st.session_state['post_id'])
         if post:
             st.session_state['loading_post_start_time'] = None
@@ -134,10 +134,6 @@ cols = st.columns(ncols)
 for i, canvas_name in enumerate(carousel_selected['canvas_names']):
     with cols[i]:
         st.image(get_thumbnail(canvas_name) + f"?pid={post_id}", caption=canvas_name, use_column_width=True)
-        if st.button("🗑️", key=f'delete-{canvas_name}'):
-            carousel_selected['canvas_names'].remove(canvas_name)
-            db.save_carousel(carousel_selected)
-            st.rerun()
 
 
 def display_text_containers(canvas: Canvas):

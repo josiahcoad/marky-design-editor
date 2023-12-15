@@ -8,6 +8,7 @@ from typing import List
 from requests import HTTPError
 import streamlit as st
 from utils.clickable_image import clickable_image
+from utils.instructions import fill_section_instructions
 from utils.marky import fill_canvases, SELECTED_PROMPT_ST_KEY
 from utils.dto import Canvas
 import utils.db as db
@@ -51,13 +52,11 @@ def fetch_canvases_from_switchboard():
         if e.response.status_code == 401:
             st.markdown("Get new token [from switchboard](https://www.switchboard.ai/s/canvas)")
             if (text := st.text_input('token', key='sb_token_input')):
-                print('HELLO???')
                 db.save_storage(SB_TOKEN_ST_KEY, text)
             st.stop()
         else:
             st.markdown("Get new cookie [from switchboard](https://www.switchboard.ai/s/canvas)")
             if (text := st.text_input('cookie', key='sb_cookie_input')):
-                print('HELLO???')
                 db.save_storage(SB_COOKIE_ST_KEY, text)
             st.stop()
 
@@ -96,7 +95,7 @@ def display_text_containers(canvas: Canvas):
                                       key=f'{old_component.name}_text_color_type-{canvas.name}')
         with cols[4]:
             new_component.instructions = st.text_input('custom instructions',
-                                                       value=old_component.instructions,
+                                                       value=old_component.instructions or fill_section_instructions(old_component.name),
                                                        key=f'{old_component.name}_instructions-{canvas.name}')
 
     if new_canvas != canvas:
@@ -286,10 +285,11 @@ def sidebar():
                                    'created_at': datetime.utcnow().isoformat(),
                                    'name': name,
                                    'display_name': display_name})
-                st.toast(f"Created theme {display_name}", icon='🤖')
+                st.success(f"Created theme '{display_name}'", icon='🤖')
 
         with st.expander('Create Carousel'):
             display_name = st.text_input('Name', key='carousel_name')
+            name = slugify(display_name)
             theme = st.selectbox('Theme', options=[None] + [x['name'] for x in themes])
             carousel_canvases_chosen = st.multiselect('Graphics', options=[x.name for x in canvases])
             if st.button('Create', disabled=not (display_name and carousel_canvases_chosen), key='create_carousel'):
@@ -297,13 +297,13 @@ def sidebar():
                     db.save_carousel({'id': str(uuid.uuid4()),
                                      'created_at': datetime.utcnow().isoformat(),
                                      'display_name': display_name,
-                                     'name': slugify(display_name),
+                                     'name': name,
                                      'canvas_names': carousel_canvases_chosen,
                                      'theme_name': theme,
                                      'approved': False,
                                      'notes': "",
                                      })
-                st.success(f"Created carousel {display_name}", icon='🤖')
+                st.success(f"Created carousel '{display_name}'", icon='🤖')
 
         global_notes = db.get_storage(GLOBAL_NOTES_ST_KEY)
         new_global_notes = st.text_area('Global Notes', value=global_notes, height=500)

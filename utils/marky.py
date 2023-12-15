@@ -86,7 +86,6 @@ def generate_post_prepare_payload(canvas: Canvas, business):
         'avatar_url': business['brand'].get('avatar'),
         'font_url': None
     }
-    print('payload', payload)
     return payload
 
 
@@ -114,7 +113,6 @@ def fill_canvas_prepare_payload(canvas: Canvas, business: Dict[str, str]):
         **fill_values,
         'text_content': text_content,
     }
-    print('payload', payload)
     return payload
 
 
