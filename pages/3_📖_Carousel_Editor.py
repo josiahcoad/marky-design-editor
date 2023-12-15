@@ -82,14 +82,14 @@ with st.sidebar:
         index = prompt_ids.index(chosen_prompt_id) if chosen_prompt_id in prompt_ids else 0
         prompt = st.selectbox("Prompt", prompts, format_func=lambda x: x['prompt'], index=index)
         st.session_state['chosen_prompt_id'] = prompt['id']
-        new_prompt = st.text_area("Prompt", prompt['prompt'], label_visibility='collapsed', height=150)
-        if new_prompt != prompt['prompt']:
-            prompt['prompt'] = new_prompt
-            db.save_prompt(prompt)
-            st.toast("Saved Prompt!")
         approved = st.checkbox("Approved", prompt.get('approved', False))
         if approved != prompt.get('approved', False):
             prompt['approved'] = approved
+            db.save_prompt(prompt)
+            st.toast("Saved Prompt!")
+        new_prompt = st.text_area("Prompt", prompt['prompt'], label_visibility='collapsed', height=150)
+        if new_prompt != prompt['prompt']:
+            prompt['prompt'] = new_prompt
             db.save_prompt(prompt)
             st.toast("Saved Prompt!")
 
