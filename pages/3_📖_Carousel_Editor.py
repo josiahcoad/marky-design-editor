@@ -100,7 +100,7 @@ with st.sidebar:
                 st.session_state['post_id'] = post_id
                 st.session_state['loading_post_start_time'] = time.time()
 
-cols = st.columns([2, 1, 2])
+cols = st.columns([4, 1])
 timer = cols[0].empty()
 loader = cols[1].empty()
 estimated_time = 30 + (30 if st.session_state['lambda_is_cold'] else 0)
@@ -122,7 +122,7 @@ ncols = len(carousel_selected['canvas_names'])
 cols = st.columns(ncols)
 for i, canvas_name in enumerate(carousel_selected['canvas_names']):
     with cols[i]:
-        st.image(get_thumbnail(canvas_name) + f'?t={time.time()}', caption=canvas_name, use_column_width=True)
+        st.image(get_thumbnail(canvas_name), caption=canvas_name, use_column_width=True)
 
 
 def display_text_containers(canvas: Canvas):
