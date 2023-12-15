@@ -103,7 +103,7 @@ def display_text_containers(canvas: Canvas):
         old_instructions = [x.instructions for x in canvas.text_components]
         new_instructions = [x.instructions for x in new_canvas.text_components]
         db.save_canvas(new_canvas)
-        reload_image(new_canvas, use_dummy_data=(old_instructions == new_instructions))
+        reload_image(new_canvas, use_dummy_data=True)
 
 
 def reload_image(canvas: Canvas, use_dummy_data):
@@ -267,38 +267,43 @@ def sidebar():
             db.save_storage(AVATAR_URL_ST_KEY, avatar_url)
 
         with st.expander('Create Theme'):
-            name = st.text_input('Name', key='theme_name')
+            display_name = st.text_input('Name', key='theme_name')
+            name = slugify(display_name)
             theme_canvases_chosen = st.multiselect('Canvases',
-                                                   options=[x.name for x in canvases if x.theme is None])
-            theme_carousels_chosen = st.multiselect('Carousels', options=[x['name'] for x in carousels])
+                                                   options=[x for x in canvases if x.theme is None],
+                                                   format_func=lambda x: x.name)
+            theme_carousels_chosen = st.multiselect('Carousels', options=carousels, format_func=lambda x: x['name'])
 
-            if st.button('Create', disabled=not (name and (theme_canvases_chosen or theme_carousels_chosen))):
+            if st.button('Create', disabled=not (display_name and (theme_canvases_chosen or theme_carousels_chosen))):
                 with st.spinner("Wait for it..."):
-                    for c in theme_canvases_chosen:
-                        canvases[c].theme = name
-                        db.save_canvas(canvases[c])
-                    for c in theme_carousels_chosen:
-                        carousels[c]['theme_name'] = name
-                        db.save_carousel(carousels[c])
-                    db.save_theme({'id': str(uuid.uuid4()), 'created_at': datetime.utcnow().isoformat(), 'name': name})
-                    st.rerun()
+                    for canvas in theme_canvases_chosen:
+                        canvas.theme = name
+                        db.save_canvas(canvas)
+                    for carousel in theme_carousels_chosen:
+                        carousel['theme_name'] = name
+                        db.save_carousel(carousel)
+                    db.save_theme({'id': str(uuid.uuid4()),
+                                   'created_at': datetime.utcnow().isoformat(),
+                                   'name': name,
+                                   'display_name': display_name})
+                st.toast(f"Created theme {display_name}", icon='🤖')
 
         with st.expander('Create Carousel'):
-            name = st.text_input('Name', key='carousel_name')
+            display_name = st.text_input('Name', key='carousel_name')
             theme = st.selectbox('Theme', options=[None] + [x['name'] for x in themes])
             carousel_canvases_chosen = st.multiselect('Graphics', options=[x.name for x in canvases])
-            if st.button('Create', disabled=not (name and carousel_canvases_chosen), key='create_carousel'):
+            if st.button('Create', disabled=not (display_name and carousel_canvases_chosen), key='create_carousel'):
                 with st.spinner("Wait for it..."):
                     db.save_carousel({'id': str(uuid.uuid4()),
                                      'created_at': datetime.utcnow().isoformat(),
-                                     'display_name': name,
-                                     'name': slugify(name),
+                                     'display_name': display_name,
+                                     'name': slugify(display_name),
                                      'canvas_names': carousel_canvases_chosen,
                                      'theme_name': theme,
                                      'approved': False,
                                      'notes': "",
                                      })
-                    st.success(f"Created carousel {name}", icon='🤖')
+                st.success(f"Created carousel {display_name}", icon='🤖')
 
         global_notes = db.get_storage(GLOBAL_NOTES_ST_KEY)
         new_global_notes = st.text_area('Global Notes', value=global_notes, height=500)
