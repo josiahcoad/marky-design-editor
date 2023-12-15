@@ -122,7 +122,7 @@ ncols = len(carousel_selected['canvas_names'])
 cols = st.columns(ncols)
 for i, canvas_name in enumerate(carousel_selected['canvas_names']):
     with cols[i]:
-        st.image(get_thumbnail(canvas_name), caption=canvas_name, use_column_width=True)
+        st.image(get_thumbnail(canvas_name) + f'?t={time.time()}', caption=canvas_name, use_column_width=True)
 
 
 def display_text_containers(canvas: Canvas):
