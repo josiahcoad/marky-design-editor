@@ -124,7 +124,11 @@ ncols = len(carousel_selected['canvas_names'])
 cols = st.columns(ncols)
 for i, canvas_name in enumerate(carousel_selected['canvas_names']):
     with cols[i]:
-        st.image(get_thumbnail(canvas_name) + "?pid={post_id}", caption=canvas_name, use_column_width=True)
+        st.image(get_thumbnail(canvas_name) + f"?pid={post_id}", caption=canvas_name, use_column_width=True)
+        if st.button("🗑️"):
+            carousel_selected['canvas_names'].remove(canvas_name)
+            db.save_carousel(carousel_selected)
+            st.rerun()
 
 
 def display_text_containers(canvas: Canvas):
