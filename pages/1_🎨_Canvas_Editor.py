@@ -60,7 +60,7 @@ def fetch_canvases_from_switchboard():
 
 
 st.session_state['need_fetch_from_switchboard'] = st.session_state.get('need_fetch_from_switchboard', False)
-if not st.session_state['need_fetch_from_switchboard']:
+if st.session_state['need_fetch_from_switchboard']:
     # see if we have a token in persistent storage
     fetch_canvases_from_switchboard()
     st.session_state['need_fetch_from_switchboard'] = False
