@@ -4,6 +4,7 @@ import streamlit as st
 from utils import db, marky
 from utils.business_formaters import format_business_context, format_facts
 from utils.dto import Canvas
+from utils.instructions import fill_section_instructions
 from utils.thumbnail import save_thumbnail, get_thumbnail
 
 st.set_page_config(layout='wide', page_title="Prompt", page_icon="📖")
@@ -86,6 +87,11 @@ with st.sidebar:
             prompt['prompt'] = new_prompt
             db.save_prompt(prompt)
             st.toast("Saved Prompt!")
+        approved = st.checkbox("Approved", prompt.get('approved', False))
+        if approved != prompt.get('approved', False):
+            prompt['approved'] = approved
+            db.save_prompt(prompt)
+            st.toast("Saved Prompt!")
 
         if st.button("Try It!"):
             with st.spinner("Loading..."):
@@ -163,7 +169,7 @@ def display_text_containers(canvas: Canvas):
                                       key=f'{old_component.name}_text_color_type-{canvas.name}')
         with cols[4]:
             new_component.instructions = st.text_input('custom instructions',
-                                                       value=old_component.instructions,
+                                                       value=old_component.instructions or fill_section_instructions(canvas.name),
                                                        key=f'{old_component.name}_instructions-{canvas.name}')
 
     if new_canvas != canvas:
