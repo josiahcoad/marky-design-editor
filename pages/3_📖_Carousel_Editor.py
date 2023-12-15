@@ -80,7 +80,7 @@ with st.sidebar:
         prompt_ids = [x['id'] for x in prompts]
         index = prompt_ids.index(chosen_prompt_id) if chosen_prompt_id in prompt_ids else 0
         prompt = st.selectbox("Prompt", prompts, format_func=lambda x: x['prompt'], index=index)
-        chosen_prompt_id = prompt['id']
+        st.session_state['chosen_prompt_id'] = prompt['id']
         new_prompt = st.text_area("Prompt", prompt['prompt'], label_visibility='collapsed')
         if new_prompt != prompt:
             prompt['prompt'] = new_prompt
