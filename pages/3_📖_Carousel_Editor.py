@@ -173,7 +173,7 @@ def display_text_containers(canvas: Canvas):
                                       key=f'{old_component.name}_text_color_type-{canvas.name}')
         with cols[4]:
             new_component.instructions = st.text_input('custom instructions',
-                                                       value=old_component.instructions or fill_section_instructions(canvas.name),
+                                                       value=old_component.instructions or fill_section_instructions(old_component.name),
                                                        key=f'{old_component.name}_instructions-{canvas.name}')
 
     if new_canvas != canvas:
