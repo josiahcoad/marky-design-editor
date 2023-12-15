@@ -104,6 +104,7 @@ cols = st.columns([4, 1])
 timer = cols[0].empty()
 loader = cols[1].empty()
 estimated_time = 30 + (30 if st.session_state['lambda_is_cold'] else 0)
+post_id = ''
 while (start_time := st.session_state['loading_post_start_time']):
     time_waiting = time.time() - start_time
     timer.text(f"Loading (takes 30-60 seconds)... {time_waiting:.1f} seconds")
@@ -117,12 +118,13 @@ while (start_time := st.session_state['loading_post_start_time']):
             for x in post['media']:
                 save_thumbnail(x['canvas_name'], x['url'])
             st.session_state['lambda_is_cold'] = False
+            post_id = post['id']
 
 ncols = len(carousel_selected['canvas_names'])
 cols = st.columns(ncols)
 for i, canvas_name in enumerate(carousel_selected['canvas_names']):
     with cols[i]:
-        st.image(get_thumbnail(canvas_name), caption=canvas_name, use_column_width=True)
+        st.image(get_thumbnail(canvas_name) + "?pid={post_id}", caption=canvas_name, use_column_width=True)
 
 
 def display_text_containers(canvas: Canvas):
