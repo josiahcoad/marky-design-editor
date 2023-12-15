@@ -81,7 +81,7 @@ with st.sidebar:
         if new_prompt != prompt:
             prompt['prompt'] = new_prompt
             db.save_prompt(prompt)
-            st.success("Saved Prompt!")
+            st.toast("Saved Prompt!")
 
         if st.button("Try It!"):
             with st.spinner("Loading..."):
