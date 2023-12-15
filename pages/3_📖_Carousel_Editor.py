@@ -77,6 +77,7 @@ with st.sidebar:
                 cols[2].color_picker("Text Color", value=business['brand']['text_color'], disabled=True)
 
         prompt = st.selectbox("Prompt", prompts, format_func=lambda x: x['prompt'])
+        st.text_area("Prompt", prompt, label_visibility='collapsed')
 
         if st.button("Try It!"):
             with st.spinner("Loading..."):
