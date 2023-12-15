@@ -76,7 +76,11 @@ with st.sidebar:
                 cols[1].color_picker("Background Color", value=business['brand']['background_color'], disabled=True)
                 cols[2].color_picker("Text Color", value=business['brand']['text_color'], disabled=True)
 
-        prompt = st.selectbox("Prompt", prompts, format_func=lambda x: x['prompt'])
+        chosen_prompt_id = st.session_state['chosen_prompt_id'] = st.session_state.get('chosen_prompt_id', None)
+        prompt_ids = [x['id'] for x in prompts]
+        index = prompt_ids.index(chosen_prompt_id) if chosen_prompt_id in prompt_ids else 0
+        prompt = st.selectbox("Prompt", prompts, format_func=lambda x: x['prompt'], index=index)
+        chosen_prompt_id = prompt['id']
         new_prompt = st.text_area("Prompt", prompt['prompt'], label_visibility='collapsed')
         if new_prompt != prompt:
             prompt['prompt'] = new_prompt
