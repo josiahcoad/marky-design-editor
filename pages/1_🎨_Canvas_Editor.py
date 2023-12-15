@@ -73,7 +73,7 @@ def display_text_containers(canvas: Canvas):
 
     new_canvas = deepcopy(canvas)
     for old_component, new_component in zip(canvas.text_components, new_canvas.text_components):
-        cols = st.columns(5)
+        cols = st.columns([1, 1, 1, 1, 2])
         with cols[0]:
             st.text(old_component.name)
         with cols[1]:

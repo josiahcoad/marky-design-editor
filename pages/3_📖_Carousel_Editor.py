@@ -38,7 +38,7 @@ with st.sidebar:
             carousel_selected['theme_name'] = theme
             db.save_carousel(carousel_selected)
 
-        approved = st.checkbox("Approved", carousel_selected.get('approved', False), key='prompt-approved')
+        approved = st.checkbox("Prompt Approved", carousel_selected.get('approved', False), key='prompt-approved')
         if approved != carousel_selected.get('approved', False):
             carousel_selected['approved'] = approved
             db.save_carousel(carousel_selected)
@@ -144,10 +144,14 @@ for i, canvas_name in enumerate(carousel_selected['canvas_names']):
 
 def display_text_containers(canvas: Canvas):
     st.subheader('Text Containers')
+    standalone = st.checkbox('standalone', canvas.standalone, key=f'{canvas.name}_standalone')
+    if standalone != canvas.standalone:
+        canvas.standalone = standalone
+        db.save_canvas(canvas)
 
     new_canvas = deepcopy(canvas)
     for old_component, new_component in zip(canvas.text_components, new_canvas.text_components):
-        cols = st.columns(5)
+        cols = st.columns([1, 1, 1, 1, 2])
         with cols[0]:
             st.text(old_component.name)
         with cols[1]:
