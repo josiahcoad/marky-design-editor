@@ -38,7 +38,7 @@ with st.sidebar:
             carousel_selected['theme_name'] = theme
             db.save_carousel(carousel_selected)
 
-        approved = st.checkbox("Approved", carousel_selected.get('approved', False))
+        approved = st.checkbox("Approved", carousel_selected.get('approved', False), key='prompt-approved')
         if approved != carousel_selected.get('approved', False):
             carousel_selected['approved'] = approved
             db.save_carousel(carousel_selected)
