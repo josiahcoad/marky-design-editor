@@ -12,9 +12,13 @@ def list_thumbnails(force_cache_refresh=True) -> Dict[str, str]:
 thumbnails = list_thumbnails()
 
 def get_thumbnail(canvas_name: str, first=True):
-    return thumbnails.get(canvas_name + ('' if first else '_2'))
+    thumbnail_key = canvas_name + ('' if first else '_2')
+    return thumbnails.get(thumbnail_key)
 
 
-def save_thumbnail(canvas_name: str, url: str, first=True):
-    upload_image_to_s3(url, canvas_name + ('' if first else '_2') + '.png')
-    st.session_state[THUMBNAILS_ST_KEY] = url
+def save_thumbnail(canvas_name: str, url: str, first=True, upload_to_s3=True):
+    thumbnail_key = canvas_name + ('' if first else '_2')
+    if upload_to_s3:
+        with st.spinner(f"Uploading thumbnail '{thumbnail_key}' to S3..."):
+            upload_image_to_s3(url, thumbnail_key + '.png')
+    st.session_state[THUMBNAILS_ST_KEY][thumbnail_key] = url

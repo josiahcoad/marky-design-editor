@@ -125,7 +125,7 @@ while (start_time := st.session_state['loading_post_start_time']):
             st.session_state['loading_post_start_time'] = None
             st.markdown("**Caption: **" + post['caption'])
             for x in post['media']:
-                save_thumbnail(x['canvas_name'], x['url'])
+                save_thumbnail(x['canvas_name'], x['url'], upload_to_s3=False)
             st.session_state['lambda_is_cold'] = False
             post_id = post['id']
 
