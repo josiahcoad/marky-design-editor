@@ -3,6 +3,7 @@ from datetime import datetime
 import uuid
 import pandas as pd
 from slugify import slugify
+from typing import List
 
 from requests import HTTPError
 import streamlit as st
@@ -273,9 +274,12 @@ def sidebar():
 
             if st.button('Create', disabled=not (name and (theme_canvases_chosen or theme_carousels_chosen))):
                 with st.spinner("Wait for it..."):
-                    for c in theme_canvases_chosen + theme_carousels_chosen:
+                    for c in theme_canvases_chosen:
                         canvases[c].theme = name
                         db.save_canvas(canvases[c])
+                    for c in theme_carousels_chosen:
+                        carousels[c]['theme_name'] = name
+                        db.save_carousel(carousels[c])
                     db.save_theme({'id': str(uuid.uuid4()), 'created_at': datetime.utcnow().isoformat(), 'name': name})
                     st.rerun()
 
