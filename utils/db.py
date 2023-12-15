@@ -54,6 +54,9 @@ def list_businesses():
 
 
 def list_users_joined_businesses(only_full_businesses=False):
+    if only_full_businesses:
+        return list_users_joined_businesses_full()
+    
     if '__users_joined_businesses' not in st.session_state:
         businesses = list_businesses()
         for x in businesses:
@@ -64,20 +67,26 @@ def list_users_joined_businesses(only_full_businesses=False):
         for x in users:
             x['user_id'] = x['id']
             del x['id']
-
+        
         business_map = {x['user_id']: x for x in businesses}
         users_joined_businesses = [{**x, **business_map.get(x['user_id'], {})} for x in users]
-        if only_full_businesses:
-            users_joined_businesses = [x for x in users_joined_businesses
-                                       if all((x.get('brand', {}).get('logo'),
-                                               x.get('brand', {}).get('color'),
-                                               x.get('brand', {}).get('background_color'),
-                                               x.get('brand', {}).get('text_color'),
-                                               x.get('website'),
-                                               x.get('topics'),
-                                               x.get('ctas')))]
         st.session_state['__users_joined_businesses'] = users_joined_businesses
     return st.session_state['__users_joined_businesses']
+
+
+def list_users_joined_businesses_full():
+    if '__users_joined_businesses_full' not in st.session_state:
+        users_joined_businesses = list_users_joined_businesses()
+        users_joined_businesses = [x for x in users_joined_businesses
+                                    if all((x.get('brand', {}).get('logo'),
+                                            x.get('brand', {}).get('color'),
+                                            x.get('brand', {}).get('background_color'),
+                                            x.get('brand', {}).get('text_color'),
+                                            x.get('website'),
+                                            x.get('topics'),
+                                            x.get('ctas')))]
+        st.session_state['__users_joined_businesses_full'] = users_joined_businesses
+    return st.session_state['__users_joined_businesses_full']
 
 
 def list_themes():
