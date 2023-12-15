@@ -6,6 +6,7 @@ from slugify import slugify
 
 from requests import HTTPError
 import streamlit as st
+from utils.clickable_image import clickable_image
 from utils.marky import fill_canvases, SELECTED_PROMPT_ST_KEY
 from utils.dto import Canvas
 import utils.db as db
@@ -31,6 +32,7 @@ themes = db.list_themes()
 businesses = db.list_users_joined_businesses(only_full_businesses=True)
 prompts = db.list_prompts()
 canvases = db.list_canvases()
+carousels = db.list_carousels()
 canvas_map = {x.name: x for x in canvases}
 
 
@@ -64,11 +66,6 @@ if st.session_state['need_fetch_from_switchboard']:
     # see if we have a token in persistent storage
     fetch_canvases_from_switchboard()
     st.session_state['need_fetch_from_switchboard'] = False
-
-
-def clickable_image(image_url, target_url, image_size=100):
-    markdown = f'<a href="{target_url}" target="_blank"><img src="{image_url}" width="{image_size}" height="{image_size}"></a>'
-    st.markdown(markdown, unsafe_allow_html=True)
 
 
 def display_text_containers(canvas: Canvas):
@@ -270,11 +267,13 @@ def sidebar():
 
         with st.expander('Create Theme'):
             name = st.text_input('Name', key='theme_name')
-            theme_canvases_chosen = st.multiselect('Graphics',
+            theme_canvases_chosen = st.multiselect('Canvases',
                                                    options=[x.name for x in canvases if x.theme is None])
-            if st.button('Create', disabled=not (name and theme_canvases_chosen)):
+            theme_carousels_chosen = st.multiselect('Carousels', options=[x.name for x in carousels])
+
+            if st.button('Create', disabled=not (name and (theme_canvases_chosen or theme_carousels_chosen))):
                 with st.spinner("Wait for it..."):
-                    for c in theme_canvases_chosen:
+                    for c in theme_canvases_chosen + theme_carousels_chosen:
                         canvases[c].theme = name
                         db.save_canvas(canvases[c])
                     db.save_theme({'id': str(uuid.uuid4()), 'created_at': datetime.utcnow().isoformat(), 'name': name})

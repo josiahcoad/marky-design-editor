@@ -3,6 +3,7 @@ import asyncio
 import random
 import streamlit as st
 from utils.business_formaters import format_business_context, format_facts
+from utils.clickable_image import clickable_image
 
 from utils.db import list_businesses, list_canvases, list_prompts
 from utils.thumbnail import get_thumbnail
@@ -30,11 +31,6 @@ def get_canvases():
 def get_prompts():
     prompts = list_prompts()
     return [x['prompt'] for x in prompts]
-
-
-def clickable_image(image_url, target_url, image_size=100):
-    markdown = f'<a href="{target_url}" target="_blank"><img src="{image_url}" width="{image_size}" height="{image_size}"></a>'
-    st.markdown(markdown, unsafe_allow_html=True)
 
 
 def generate_payloads(business_context, facts, language, canvas_names, prompts, topics, ctas, intentions, caption_length_min, caption_length_max, color_palletes):

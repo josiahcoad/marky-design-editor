@@ -123,7 +123,7 @@ while (start_time := st.session_state['loading_post_start_time']):
         post = marky.get_post(st.session_state['post_id'])
         if post:
             st.session_state['loading_post_start_time'] = None
-            st.markdown("**Caption: **" + post['caption'])
+            st.markdown("**Caption:** " + post['caption'])
             for x in post['media']:
                 save_thumbnail(x['canvas_name'], x['url'], upload_to_s3=False)
             st.session_state['lambda_is_cold'] = False
