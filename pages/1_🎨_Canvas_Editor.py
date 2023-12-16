@@ -48,6 +48,7 @@ def fetch_canvases_from_switchboard():
             st.toast(f"Updated {len(updated)} canvases from switchboard: {[x.name for x in updated]}", icon='🤖')
         db.clear_canvas_cache()
         db.list_canvases() # refills cache
+        return True
     except HTTPError as e:
         if e.response.status_code == 401:
             st.markdown("Get new token [from switchboard](https://www.switchboard.ai/s/canvas)")
@@ -59,13 +60,15 @@ def fetch_canvases_from_switchboard():
             if (text := st.text_input('cookie', key='sb_cookie_input')):
                 db.save_storage(SB_COOKIE_ST_KEY, text)
             st.stop()
+        return False
 
 
 st.session_state['need_fetch_from_switchboard'] = st.session_state.get('need_fetch_from_switchboard', False)
 if st.session_state['need_fetch_from_switchboard']:
     # see if we have a token in persistent storage
-    fetch_canvases_from_switchboard()
-    st.session_state['need_fetch_from_switchboard'] = False
+    success = fetch_canvases_from_switchboard()
+    if success:
+        st.session_state['need_fetch_from_switchboard'] = False
 
 
 def display_text_containers(canvas: Canvas):
