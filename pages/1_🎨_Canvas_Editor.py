@@ -67,7 +67,9 @@ st.session_state['need_fetch_from_switchboard'] = st.session_state.get('need_fet
 if st.session_state['need_fetch_from_switchboard']:
     # see if we have a token in persistent storage
     success = fetch_canvases_from_switchboard()
-    if success:
+    if not success:
+        st.rerun()
+    else:
         st.session_state['need_fetch_from_switchboard'] = False
 
 

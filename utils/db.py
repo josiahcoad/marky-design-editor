@@ -125,6 +125,12 @@ def save_all_canvases(canvases: List[Canvas]):
     st.session_state['__canvases'] = canvases
 
 
+def delete_canvas(canvas: Canvas):
+    delete(CANVAS_TABLE_NAME, 'id', canvas.id)
+    delete('canvas-dev', 'id', canvas.id)
+    del st.session_state['__canvases'][canvas.id]
+
+
 def save_prompt(item):
     put(PROMPT_TABLE_NAME, item)
     put('prompts-dev', item)

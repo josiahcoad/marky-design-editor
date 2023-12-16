@@ -2,6 +2,7 @@
 import json
 from typing import Dict, List
 import requests
+import streamlit
 from utils import db
 
 from utils.dto import Canvas, CanvasComponent
@@ -24,6 +25,14 @@ def update_canvases_with_switchboard(sb_token, sb_cookie):
     response.raise_for_status()
     sb_data = response.json()
     to_update: List[Canvas] = []
+    sb_canvas_map = {x['configuration']['template']['name']: x for x in sb_data if x['configuration']}
+    
+    for canvas_name, db_canvas in db_canvases.items():
+        if canvas_name not in sb_canvas_map:
+            streamlit.toast(f"Deleting canvas {canvas_name}")
+            db.delete_canvas(db_canvas)
+
+
     for sb_template in sb_data:
         config = sb_template['configuration']
         if not config:
