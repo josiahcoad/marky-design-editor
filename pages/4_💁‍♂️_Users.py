@@ -82,7 +82,7 @@ def filter_dataframe(df: pd.DataFrame) -> pd.DataFrame:
             if df[column].dtype == bool:
                 user_bool_input = right.checkbox(f"Values for {column}", value=True)
                 df = df[df[column] == user_bool_input]
-            if is_categorical_dtype(df[column]) or df[column].nunique() < 10:
+            elif is_categorical_dtype(df[column]) or df[column].nunique() < 10:
                 user_cat_input = right.multiselect(
                     f"Values for {column}",
                     df[column].unique(),
@@ -131,6 +131,52 @@ st.dataframe(df[cols_selected], use_container_width=True)
 
 
 import plotly.graph_objects as go
+
+st.markdown('---')
+st.header('Stats (Last 24 hours)')
+import streamlit as st
+
+def create_card(header, value, subheader=None):
+    with st.container():
+        st.header(header)
+        if subheader:
+            st.subheader(subheader)
+        st.write(value)
+
+
+last_24 = df[df['created_at'] > datetime.now() - pd.Timedelta(days=1)]
+demoed_last_24 = last_24['signedup'].count()
+signedup_last_24 = last_24['signedup'].sum()
+trialed_last_24 = last_24['trial_details.trialed'].sum()
+hit_paywall_last_24 = last_24['trial_details.hit_paywall'].sum()
+subscribed_last_24 = last_24['trial_details.subscribed'].sum()
+
+cols = st.columns(4)
+with cols[0]:
+    create_card("Demoed", demoed_last_24)
+with cols[1]:
+    create_card("Signed Up", signedup_last_24)
+with cols[2]:
+    create_card("Trialed", trialed_last_24)
+with cols[3]:
+    create_card("Subscribed", subscribed_last_24)
+
+import plotly.express as px
+# data = dict(
+#     number=[demoed_last_24, signedup_last_24, hit_paywall_last_24, trialed_last_24],
+#     stage=["Demoed", "Signed Up", "Paywall", "Trialed"])
+# fig = px.funnel(data, x='number', y='stage')
+# st.plotly_chart(fig)
+
+from plotly import graph_objects as go
+
+fig = go.Figure(go.Funnel(
+    y = ["Demoed", "Signed Up", "Paywall", "Trialed"],
+    x = [demoed_last_24, signedup_last_24, hit_paywall_last_24, trialed_last_24],
+    textposition = "inside",
+    textinfo = "value+percent initial",
+    ))
+st.plotly_chart(fig)
 
 st.markdown('---')
 st.header('Charts')
