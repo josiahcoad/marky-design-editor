@@ -148,9 +148,9 @@ with col2:
 
 
 components = st.session_state.get('text_components') or [
-    TextComponent(name='title', max_characters=50, fill_section_instructions('title')),
-    TextComponent(name='content', max_characters=150, fill_section_instructions('content')),
-    TextComponent(name='cta', max_characters=20, fill_section_instructions('cta')),
+    TextComponent(name='title', max_characters=50, instructions=fill_section_instructions('title')),
+    TextComponent(name='content', max_characters=150, instructions=fill_section_instructions('content')),
+    TextComponent(name='cta', max_characters=20, instructions=fill_section_instructions('cta')),
 ]
 
 with st.expander('Text Components'):
