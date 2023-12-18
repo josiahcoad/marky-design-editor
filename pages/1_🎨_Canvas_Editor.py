@@ -271,7 +271,7 @@ def sidebar():
             db.save_storage(AVATAR_URL_ST_KEY, avatar_url)
 
         with st.expander('Create Theme'):
-            display_name = st.text_input('Name', key='theme_name')
+            display_name = st.text_input('Display Name', key='theme_name')
             name = slugify(display_name)
             theme_canvases_chosen = st.multiselect('Canvases',
                                                    options=[x for x in canvases if x.theme is None],

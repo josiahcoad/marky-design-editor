@@ -17,7 +17,7 @@ st.set_page_config(layout='wide', page_title="Users", page_icon="💁‍♂️")
 users = db.list_users_joined_businesses()
 flattened_businesses = json_normalize(users)
 df = pd.DataFrame(flattened_businesses)
-df = df[~df['email'].str.startswith('markytest')]
+df = df[~(df['email'].str.startswith('markytest') | df['email'].str.startswith('betalingtester'))]
 df.replace('__GSI_NULL', np.nan, inplace=True)
 df['trial_details.cancelled'] = (~df['trial_details.cancelled_at'].isna())
 df['trial_details.subscribed'] = (~df['trial_details.subscribed_at'].isna())
@@ -78,6 +78,10 @@ def filter_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         for column in to_filter_columns:
             left, right = st.columns((1, 20))
             # Treat columns with < 10 unique values as categorical
+            # is boolean type
+            if df[column].dtype == bool:
+                user_bool_input = right.checkbox(f"Values for {column}", value=True)
+                df = df[df[column] == user_bool_input]
             if is_categorical_dtype(df[column]) or df[column].nunique() < 10:
                 user_cat_input = right.multiselect(
                     f"Values for {column}",
