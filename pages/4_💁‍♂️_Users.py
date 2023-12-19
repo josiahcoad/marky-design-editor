@@ -133,50 +133,55 @@ st.dataframe(df[cols_selected], use_container_width=True)
 import plotly.graph_objects as go
 
 st.markdown('---')
-st.header('Stats (Last 24 hours)')
 import streamlit as st
 
-def create_card(header, value, subheader=None):
-    with st.container():
-        st.header(header)
-        if subheader:
-            st.subheader(subheader)
-        st.write(value)
 
 
-last_24 = df[df['created_at'] > datetime.now() - pd.Timedelta(days=1)]
-demoed_last_24 = last_24['signedup'].count()
-signedup_last_24 = last_24['signedup'].sum()
-trialed_last_24 = last_24['trial_details.trialed'].sum()
-hit_paywall_last_24 = last_24['trial_details.hit_paywall'].sum()
-subscribed_last_24 = last_24['trial_details.subscribed'].sum()
-
-cols = st.columns(4)
-with cols[0]:
-    create_card("Demoed", demoed_last_24)
-with cols[1]:
-    create_card("Signed Up", signedup_last_24)
-with cols[2]:
-    create_card("Trialed", trialed_last_24)
-with cols[3]:
-    create_card("Subscribed", subscribed_last_24)
-
-import plotly.express as px
-# data = dict(
-#     number=[demoed_last_24, signedup_last_24, hit_paywall_last_24, trialed_last_24],
-#     stage=["Demoed", "Signed Up", "Paywall", "Trialed"])
-# fig = px.funnel(data, x='number', y='stage')
-# st.plotly_chart(fig)
 
 from plotly import graph_objects as go
 
-fig = go.Figure(go.Funnel(
-    y = ["Demoed", "Signed Up", "Paywall", "Trialed"],
-    x = [demoed_last_24, signedup_last_24, hit_paywall_last_24, trialed_last_24],
-    textposition = "inside",
-    textinfo = "value+percent initial",
-    ))
-st.plotly_chart(fig)
+
+st.header('Funnel Comparison')
+col1, col2 = st.columns(2)
+with col1:
+    days = st.slider('Days', 1, 7, 1, 1)
+    recent = df[df['created_at'] > datetime.now() - pd.Timedelta(days=days)]
+    demoed_last = recent['signedup'].count()
+    signedup_last = recent['signedup'].sum()
+    trialed_last = recent['trial_details.trialed'].sum()
+    hit_paywall_last = recent['trial_details.hit_paywall'].sum()
+    subscribed_last = recent['trial_details.subscribed'].sum()
+
+    fig = go.Figure(go.Funnel(
+        y = ["Demoed", "Signed Up", "Paywall", "Trialed"],
+        x = [demoed_last, signedup_last, hit_paywall_last, trialed_last],
+        title = {"position": "top center", "text": f"Funnel for last {days} days"},
+        textposition = "inside",
+        textinfo = "value+percent initial",
+        ))
+
+    st.plotly_chart(fig)
+
+
+with col2:
+    days = st.slider('Days', 1, 60, 30, 1)
+    recent = df[df['created_at'] > datetime.now() - pd.Timedelta(days=days)]
+    demoed_last = recent['signedup'].count()
+    signedup_last = recent['signedup'].sum()
+    trialed_last = recent['trial_details.trialed'].sum()
+    hit_paywall_last = recent['trial_details.hit_paywall'].sum()
+    subscribed_last = recent['trial_details.subscribed'].sum()
+
+    fig = go.Figure(go.Funnel(
+        y = ["Demoed", "Signed Up", "Paywall", "Trialed"],
+        x = [demoed_last, signedup_last, hit_paywall_last, trialed_last],
+        title = {"position": "top center", "text": f"Funnel for last {days} days"},
+        textposition = "inside",
+        textinfo = "value+percent initial",
+        ))
+
+    st.plotly_chart(fig)
+
 
 st.markdown('---')
 st.header('Charts')
