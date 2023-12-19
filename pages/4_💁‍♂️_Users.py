@@ -160,7 +160,7 @@ with col1:
         textinfo = "value+percent initial",
         ))
 
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, use_container_width=True)
 
 
 with col2:
@@ -180,7 +180,7 @@ with col2:
         textinfo = "value+percent initial",
         ))
 
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, use_container_width=True)
 
 
 st.markdown('---')
