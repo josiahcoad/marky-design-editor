@@ -155,7 +155,7 @@ with col1:
     fig = go.Figure(go.Funnel(
         y = ["Demoed", "Signed Up", "Paywall", "Trialed"],
         x = [demoed_last, signedup_last, hit_paywall_last, trialed_last],
-        title = {"position": "top center", "text": f"Funnel for last {days} days"},
+        # title = {"position": "top center", "text": f"Funnel for last {days} days"},
         textposition = "inside",
         textinfo = "value+percent initial",
         ))
@@ -175,7 +175,7 @@ with col2:
     fig = go.Figure(go.Funnel(
         y = ["Demoed", "Signed Up", "Paywall", "Trialed"],
         x = [demoed_last, signedup_last, hit_paywall_last, trialed_last],
-        title = {"position": "top center", "text": f"Funnel for last {days} days"},
+        # title = {"position": "top center", "text": f"Funnel for last {days} days"},
         textposition = "inside",
         textinfo = "value+percent initial",
         ))
