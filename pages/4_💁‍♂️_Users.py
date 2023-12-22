@@ -270,3 +270,14 @@ with cols[col_counter % ncols]:
     fig.add_trace(go.Scatter(x=subscribed.index, y=subscribed.values))
     fig.update_layout(title='Subscribed')
     st.plotly_chart(fig, use_container_width=True)
+
+col_counter += 1
+with cols[col_counter % ncols]:
+    # discovery method % over time (one line per discovery method)
+    discovery_method = df.resample(group_time, on='created_at')['discovery_method'].value_counts(normalize=True)
+    discovery_method = discovery_method.unstack()
+    fig = go.Figure()
+    for col in discovery_method.columns:
+        fig.add_trace(go.Scatter(x=discovery_method.index, y=discovery_method[col], name=col))
+    fig.update_layout(title='Discovery Method')
+    st.plotly_chart(fig, use_container_width=True)
