@@ -41,6 +41,8 @@ def list_users():
     if '__users' not in st.session_state:
         with st.spinner("Getting users from db..."):
             users = list_all(USER_TABLE_NAME)
+            for user in users:
+                del user['password']
         st.session_state['__users'] = {x['id']: x for x in users}
     return list(st.session_state['__users'].values())
 
